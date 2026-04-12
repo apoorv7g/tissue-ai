@@ -1,0 +1,95 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Design tokens (dark default) ── */
+:root {
+  --background:    223 28% 6%;
+  --foreground:    210 30% 95%;
+  --card:          223 24% 9%;
+  --card-fg:       210 30% 95%;
+  --muted:         220 20% 14%;
+  --muted-fg:      215 20% 46%;
+  --border:        220 18% 18%;
+  --primary:       38 90% 58%;
+  --primary-fg:    38 35% 8%;
+  --destructive:   0 65% 62%;
+  --radius:        6px;
+  --radius-lg:     10px;
+  --primary-dim:   hsla(38, 90%, 58%, 0.12);
+  --primary-ring:  hsla(38, 90%, 58%, 0.30);
+  --primary-glow:  0 0 0 3px hsla(38, 90%, 58%, 0.15);
+}
+
+.light {
+  --background:  220 30% 97%;
+  --foreground:  223 35% 12%;
+  --card:        0 0% 100%;
+  --card-fg:     223 35% 12%;
+  --muted:       220 20% 92%;
+  --muted-fg:    215 20% 46%;
+  --border:      220 18% 86%;
+  --primary:     38 90% 48%;
+  --primary-fg:  38 35% 6%;
+  --primary-dim: hsla(38, 90%, 48%, 0.12);
+  --primary-ring: hsla(38, 90%, 48%, 0.30);
+  --primary-glow: 0 0 0 3px hsla(38, 90%, 48%, 0.14);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection { background: var(--primary-dim); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: hsl(220 18% 22%); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: hsl(220 18% 30%); }
+* { scrollbar-width: thin; scrollbar-color: hsl(220 18% 22%) transparent; }
+
+.light ::-webkit-scrollbar-thumb { background: hsl(220 18% 78%); }
+
+/* Canvas dot-grid */
+.dot-grid {
+  background-color: hsl(223 28% 7%);
+  background-image: radial-gradient(circle, hsl(220 16% 22%) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+.light .dot-grid {
+  background-color: hsl(220 25% 96%);
+  background-image: radial-gradient(circle, hsl(220 16% 80%) 1px, transparent 1px);
+}
+
+/* Shimmer (loading skeleton) */
+.shimmer {
+  background: linear-gradient(
+    105deg,
+    hsl(var(--card)) 25%,
+    hsl(var(--muted)) 50%,
+    hsl(var(--card)) 75%
+  );
+  background-size: 220% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes dot-bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.3; }
+  30%           { transform: translateY(-3px); opacity: 1; }
+}
