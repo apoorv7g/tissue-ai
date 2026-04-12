@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Pencil, Trash2, LogOut, Loader2, User } from 'lucide-react'
 import { cn, formatDate } from '@/lib/utils'
 import type { Chat } from '@/lib/types'
-import Image from 'next/image'
+
 
 interface Props {
   chats: Chat[]
@@ -87,8 +87,8 @@ export default function Sidebar({
 
       {/* Footer */}
       <div className="px-2 py-2.5 border-t border-border flex items-center gap-2">
-        <div className="w-8 h-8 rounded-full bg-[var(--primary-dim)] border border-[var(--primary-ring)] flex items-center justify-center overflow-hidden shrink-0">
-          <Image src="/profile-img.png" alt="Profile" width={32} height={32} className="object-cover" />
+        <div className="w-8 h-8 rounded-full bg-[var(--primary-dim)] border border-[var(--primary-ring)] flex items-center justify-center shrink-0">
+          <User className="w-4 h-4 text-primary" />
         </div>
         <button
           onClick={onLogout}
