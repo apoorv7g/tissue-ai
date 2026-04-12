@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "tissue-ai-v2"
+version = "0.1.0"
+description = "Tissue AI v3 hybrid FastAPI + Jinja + HTMX app"
+authors = ["Tissue AI Team"]
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = ">=3.12,<4.0"
+fastapi = "0.115.8"
+uvicorn = { version = "0.34.0", extras = ["standard"] }
+jinja2 = "3.1.6"
+httpx = "0.28.1"
+pydantic = "2.11.3"
+pydantic-settings = "2.8.1"
+python-multipart = "0.0.20"
+itsdangerous = "2.2.0"
+psycopg = { version = "3.2.6", extras = ["binary"] }
+psycopg-pool = "3.2.6"
+typing-extensions = ">=4.14.1"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "8.3.5"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
