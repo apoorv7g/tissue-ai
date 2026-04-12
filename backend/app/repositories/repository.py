@@ -17,15 +17,25 @@ DEFAULT_STYLE = {
 
 class Repository:
     @staticmethod
-    def ensure_profile(user_id: str) -> None:
-        execute(
-            """
-            insert into profiles (id)
-            values (%s)
-            on conflict (id) do nothing
-            """,
-            (user_id,),
-        )
+    def ensure_profile(user_id: str, email: str | None = None) -> None:
+        try:
+            execute(
+                """
+                insert into profiles (id, email)
+                values (%s, %s)
+                on conflict (id) do nothing
+                """,
+                (user_id, email),
+            )
+        except Exception:
+            execute(
+                """
+                insert into profiles (id)
+                values (%s)
+                on conflict (id) do nothing
+                """,
+                (user_id,),
+            )
 
     @staticmethod
     def list_chats(user_id: str) -> list[dict[str, Any]]:

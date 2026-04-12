@@ -31,7 +31,7 @@ def signup(email: str = Form(...), password: str = Form(...)):
         user_id = payload['user']['id']
         session_data = payload['session']
 
-        repository.ensure_profile(user_id)
+        repository.ensure_profile(user_id, email.strip())
 
         session = make_session_payload(
             user_id=user_id,
@@ -53,7 +53,13 @@ def signup(email: str = Form(...), password: str = Form(...)):
 def login(email: str = Form(...), password: str = Form(...)):
     try:
         payload = auth_service.login(email=email.strip(), password=password)
-        user_id = payload['user']['id']
+        user_data = payload.get('user')
+        if user_data:
+            user_id = user_data.get('id')
+        else:
+            user_id = payload.get('id')
+        if not user_id:
+            raise SupabaseAuthError('Login failed: no user id returned')
         repository.ensure_profile(user_id, email.strip())
 
         session = make_session_payload(
