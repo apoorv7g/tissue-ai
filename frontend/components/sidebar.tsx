@@ -20,18 +20,65 @@ interface Props {
   onLogout: () => Promise<void>
 }
 
+interface ApiKeyProps {
+  onSave: (apiKey: string) => void
+}
 
+function ApiKeyPopup({ onSave }: ApiKeyProps) {
+  const [apiKey, setApiKey] = useState('')
+  const [email, setEmail] = useState('')
+
+  useEffect(() => {
+    getMe().then(r => setEmail(r.email)).catch(() => {})
+  }, [])
+
+  function handleSave() {
+    if (apiKey.trim()) {
+      onSave(apiKey.trim())
+    }
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+    >
+      <div className="w-80 bg-card border border-border rounded-lg shadow-xl p-4 flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-semibold text-foreground">Settings</span>
+        </div>
+        <div className="text-xs text-muted-foreground">
+          {email || 'Loading...'}
+        </div>
+        <input
+          type="password"
+          value={apiKey}
+          onChange={e => setApiKey(e.target.value)}
+          placeholder="Groq API Key (gsk_...)"
+          className="w-full h-10 px-3 rounded border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[var(--primary-ring)]"
+        />
+        <div className="flex gap-2">
+          <button
+            onClick={handleSave}
+            className="flex-1 h-9 rounded bg-primary text-primary-foreground text-sm font-medium hover:opacity-88 transition-all"
+          >
+            OK
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  )
+}
 
 export default function Sidebar({
   chats, loading, currentChatId,
   onNewChat, onSelectChat, onDeleteChat, onRenameChat, onLogout,
-  userEmail = '',
-  userApiKey = '',
 }: Props) {
   const [creating, setCreating] = useState(false)
-  const [profileOpen, setProfileOpen] = useState(false)
-  const [email, setEmail] = useState(userEmail)
-  const [apiKey, setApiKey] = useState(userApiKey)
+  const [apiKeyOpen, setApiKeyOpen] = useState(false)
+  const [email, setEmail] = useState('')
 
   useEffect(() => {
     getMe().then(r => setEmail(r.email)).catch(() => {})

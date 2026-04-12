@@ -56,30 +56,43 @@ LAYOUT: radial mind map. STRICT RULES — violating these will break rendering:
   to theme branches (e.g. one branch family in blues). Omit unless it improves clarity.
 """.strip(),
     'sequence': """
-LAYOUT: left-to-right sequence.
-- chain A -> B -> C
-- optional split that rejoins
-- 6-8 nodes total
+LAYOUT: left-to-right sequence diagram (timeline/gantt style).
+- Actor/System on left, time flowing left-to-right
+- Actors and their actions in order
+- Use arrows to show who does what first
+- Optional vertical dividers for phases
+- Include 4-6 step sequence
+- Edge labels: "sends", "receives", "completes", "calls", etc.
 """.strip(),
     'tree': """
-LAYOUT: strict hierarchy top-down.
-- one root
-- 3 levels
-- each node has one parent
-- 10-15 nodes total
+LAYOUT: strict hierarchical tree (org chart / taxonomy style).
+- ROOT node at top (single entry point)
+- Each node has exactly ONE parent
+- 3-4 levels of hierarchy
+- Children aligned under parents
+- 8-12 nodes total
+- Use rectangles for all nodes (not diamonds)
+- No cycles, no backward edges
 """.strip(),
     'network': """
-LAYOUT: dense concept map.
-- no strict root
-- each node connects to 2-4 others
-- cycles allowed
-- 8-12 nodes total
+LAYOUT: dense network / graph / cloud diagram.
+- NO single root - distributed/p2p structure
+- Nodes can have multiple connections (2-4 each)
+- Cycles are allowed and encouraged
+- Central/key nodes should have more connections
+- 8-14 nodes total
+- Optional: highlight clusters/groups with color
+- Edge labels: "uses", "depends on", "connects to", "calls", etc.
 """.strip(),
     'timeline': """
-LAYOUT: horizontal timeline chain.
-- start and end required
-- milestone and regular events
-- 6-8 events
+LAYOUT: horizontal timeline / chronology.
+- Start node on left, End node on right
+- Events ordered chronologically left-to-right
+- Include both milestones (diamond) and regular events
+- Use arrows to show progression
+- 5-8 events total
+- Key events marked with milestone shape
+- Edge labels: "after", "then", "leads to", "followed by", etc.
 """.strip(),
 }
 
