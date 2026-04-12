@@ -14,9 +14,13 @@ export default function Composer({ onSend, disabled }: Props) {
   const [content, setContent] = useState('')
   const [type, setType] = useState<DiagramType>('flowchart')
   const [sending, setSending] = useState(false)
-  const [apiKey, setApiKey] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('groq_api_key') || '' : '')
+  const [apiKey, setApiKey] = useState('')
   const [showApiKey, setShowApiKey] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  useEffect(() => {
+    setApiKey(localStorage.getItem('groq_api_key') || '')
+  }, [])
 
   // Ref always holds the latest selected type — never stale in async closures
   const typeRef = useRef<DiagramType>('flowchart')
@@ -49,7 +53,7 @@ export default function Composer({ onSend, disabled }: Props) {
     const trimmed = content.trim()
     if (!trimmed || sending || disabled) return
     if (!apiKey.trim()) {
-      alert('Please enter your Groq API key')
+      alert('Please click the user icon and enter your Groq API key')
       return
     }
     const currentType = typeRef.current   // read from ref — always fresh
