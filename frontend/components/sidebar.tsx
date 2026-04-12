@@ -77,12 +77,8 @@ export default function Sidebar({
   onNewChat, onSelectChat, onDeleteChat, onRenameChat, onLogout,
 }: Props) {
   const [creating, setCreating] = useState(false)
+  const [creating, setCreating] = useState(false)
   const [apiKeyOpen, setApiKeyOpen] = useState(false)
-  const [email, setEmail] = useState('')
-
-  useEffect(() => {
-    getMe().then(r => setEmail(r.email)).catch(() => {})
-  }, [])
 
   async function handleNew() {
     if (creating) return
@@ -147,7 +143,7 @@ export default function Sidebar({
       {/* Footer */}
       <div className="px-2 py-2.5 border-t border-border flex items-center gap-2">
         <button
-          onClick={() => setProfileOpen(!profileOpen)}
+          onClick={() => setApiKeyOpen(!apiKeyOpen)}
           className="w-8 h-8 rounded-full bg-[var(--primary-dim)] border border-[var(--primary-ring)] flex items-center justify-center shrink-0 hover:opacity-80 transition-all"
         >
           <User className="w-4 h-4 text-primary" />
@@ -162,7 +158,7 @@ export default function Sidebar({
       </div>
 
       {/* Profile Popup */}
-      {profileOpen && (
+      {apiKeyOpen && (
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -170,7 +166,7 @@ export default function Sidebar({
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-muted-foreground">{email || 'Loading...'}</span>
-            <button onClick={() => setProfileOpen(false)} className="text-muted-foreground hover:text-foreground">
+            <button onClick={() => setApiKeyOpen(false)} className="text-muted-foreground hover:text-foreground">
               <X className="w-3 h-3" />
             </button>
           </div>
