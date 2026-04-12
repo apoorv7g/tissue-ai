@@ -37,62 +37,63 @@ SUBTITLE RULES:
 
 STYLE_GUIDES: dict[DiagramType, str] = {
     'flowchart': """
-LAYOUT: strict top-down flowchart.
-- start node and end node are required
-- decision nodes must have Yes and No outgoing edges
-- 7-10 nodes total
+LAYOUT: vertical flowchart (process flow).
+- Start node at TOP, End at BOTTOM
+- Connected vertical chain: top → bottom
+- Decision diamonds with Yes/No branches
+- Use arrows showing direction of flow
+- 7-12 nodes total
+- Classic top-to-bottom progression
 """.strip(),
     'mindmap': """
-LAYOUT: radial mind map. STRICT RULES — violating these will break rendering:
-- Node "1" MUST be the center/root topic.
-- The center node connects DIRECTLY to 4-6 primary branch nodes (e.g., "1"->"2", "1"->"3", "1"->"4", "1"->"5").
-- Each primary branch can have 1-2 children (e.g., "2"->"7", "2"->"8").
-- NO linear chains (do NOT do "1"->"2"->"3"->"4" — the center must fan out, not chain).
-- No cycles. No edges pointing back to node "1".
-- 9-14 nodes total.
-- Example edge structure for 5 primary branches with 1 child each:
-  "1"->["2","3","4","5","6"], "2"->"7", "3"->"8", "4"->"9", "5"->"10", "6"->"11"
-- Optional per-node styling (hex only): you may add "fill", "stroke", and "textColor" on any node
-  to theme branches (e.g. one branch family in blues). Omit unless it improves clarity.
+LAYOUT: radial/central mind map — center radiates outward.
+- Node "1" is CENTER, all branches fan OUT from center
+- Primary branches radiate from center like spokes of a wheel
+- 4-8 primary branches max, each can have 1-2 sub-branches
+- NO vertical chains, NO horizontal steps
+- 10-15 nodes total
+- Visual: center node with rays outward
 """.strip(),
     'sequence': """
-LAYOUT: left-to-right sequence diagram (timeline/gantt style).
-- Actor/System on left, time flowing left-to-right
-- Actors and their actions in order
-- Use arrows to show who does what first
-- Optional vertical dividers for phases
-- Include 4-6 step sequence
-- Edge labels: "sends", "receives", "completes", "calls", etc.
+LAYOUT: horizontal sequence/timeline — left-to-right steps.
+- Time flows LEFT to RIGHT
+- Each step is a box in a horizontal chain
+- A → B → C → D → E (straight chain)
+- No branching, no children, linear progression
+- Use arrows: "executes", "completes", "then", "produces"
+- 5-8 sequential steps
+- Like a horizontal pipeline or to-do list
 """.strip(),
     'tree': """
-LAYOUT: strict hierarchical tree (org chart / taxonomy style).
-- ROOT node at top (single entry point)
-- Each node has exactly ONE parent
-- 3-4 levels of hierarchy
-- Children aligned under parents
-- 8-12 nodes total
-- Use rectangles for all nodes (not diamonds)
-- No cycles, no backward edges
+LAYOUT: hierarchical tree — parent sits above children.
+- ROOT at TOP
+- Children arranged BELOW parent at same horizontal level
+- Parent connects to ALL its children with vertical lines
+- Each level is a horizontal tier
+- Pure hierarchy: one parent → multiple children at same level
+- 8-15 nodes, 3-4 levels deep
+- Visual: org chart style, like a family tree
 """.strip(),
     'network': """
-LAYOUT: dense network / graph / cloud diagram.
-- NO single root - distributed/p2p structure
-- Nodes can have multiple connections (2-4 each)
-- Cycles are allowed and encouraged
-- Central/key nodes should have more connections
+LAYOUT: free-form network/graph — nodes scattered, interconnected.
+- NO center, NO root, NO hierarchy
+- Nodes scattered with lines to multiple neighbors
+- Any node can connect to ANY other nodes
+- Cycles and cross-connections WELCOME
+- Mesh of interconnected ideas
 - 8-14 nodes total
-- Optional: highlight clusters/groups with color
-- Edge labels: "uses", "depends on", "connects to", "calls", etc.
+- Visual: spider web or constellation pattern
+- Edge labels: "links to", "related to", "works with"
 """.strip(),
     'timeline': """
-LAYOUT: horizontal timeline / chronology.
-- Start node on left, End node on right
-- Events ordered chronologically left-to-right
-- Include both milestones (diamond) and regular events
-- Use arrows to show progression
-- 5-8 events total
-- Key events marked with milestone shape
-- Edge labels: "after", "then", "leads to", "followed by", etc.
+LAYOUT: chronological horizontal timeline — events on a line.
+- START on far LEFT, END on far RIGHT
+- Events dotted along a horizontal time axis
+- Milestones marked with diamond
+- Years/dates as labels
+- 5-8 events in order
+- Single horizontal line, events branch off/up/down slightly
+- Like a project's history or roadmap
 """.strip(),
 }
 
