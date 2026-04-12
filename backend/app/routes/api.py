@@ -102,9 +102,12 @@ async def post_message(chat_id: str, request: Request, user: CurrentUser = Depen
     payload = await _read_payload(request)
     content = str(payload.get('content') or '').strip()
     diagram_type_raw = str(payload.get('diagram_type') or 'flowchart').strip().lower()
+    api_key = str(payload.get('api_key') or '').strip()
 
     if not content:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='content is required')
+    if not api_key:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='api_key is required')
     if diagram_type_raw not in VALID_DIAGRAM_TYPES:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='invalid diagram_type')
 
@@ -115,7 +118,7 @@ async def post_message(chat_id: str, request: Request, user: CurrentUser = Depen
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Chat not found')
 
     try:
-        raw_json, latency_ms = await run_in_threadpool(generate_raw_diagram, content, diagram_type)
+        raw_json, latency_ms = await run_in_threadpool(generate_raw_diagram, content, diagram_type, api_key)
         layout_json = await run_in_threadpool(apply_layout, raw_json, diagram_type)
 
         assistant_message = await run_in_threadpool(
@@ -142,16 +145,22 @@ async def post_message(chat_id: str, request: Request, user: CurrentUser = Depen
 
 
 @router.post('/diagrams/{diagram_id}/regenerate')
-async def regenerate(diagram_id: str, user: CurrentUser = Depends(require_user)):
+async def regenerate(diagram_id: str, request: Request, user: CurrentUser = Depends(require_user)):
+    payload = await _read_payload(request)
+    api_key = str(payload.get('api_key') or '').strip()
+    
     context = await run_in_threadpool(repository.get_diagram_generation_context, user.id, diagram_id)
     if not context:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Diagram not found')
+    
+    if not api_key:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='api_key is required')
 
     diagram_type = str(context['diagram_type']).lower()
     if diagram_type not in VALID_DIAGRAM_TYPES:
         diagram_type = 'flowchart'
 
-    raw_json, latency_ms = await run_in_threadpool(generate_raw_diagram, context['source_content'], diagram_type)
+    raw_json, latency_ms = await run_in_threadpool(generate_raw_diagram, context['source_content'], diagram_type, api_key)
     layout_json = await run_in_threadpool(apply_layout, raw_json, diagram_type)
 
     updated = await run_in_threadpool(

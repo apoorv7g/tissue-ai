@@ -1,12 +1,12 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
-import { Send } from 'lucide-react'
+import { Send, Key } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 type DiagramType = 'flowchart' | 'mindmap'
 
 interface Props {
-  onSend: (content: string, type: DiagramType) => Promise<void>
+  onSend: (content: string, type: DiagramType, apiKey: string) => Promise<void>
   disabled?: boolean
 }
 
@@ -14,6 +14,8 @@ export default function Composer({ onSend, disabled }: Props) {
   const [content, setContent] = useState('')
   const [type, setType] = useState<DiagramType>('flowchart')
   const [sending, setSending] = useState(false)
+  const [apiKey, setApiKey] = useState('')
+  const [showApiKey, setShowApiKey] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // Ref always holds the latest selected type — never stale in async closures
@@ -46,11 +48,15 @@ export default function Composer({ onSend, disabled }: Props) {
   async function submit() {
     const trimmed = content.trim()
     if (!trimmed || sending || disabled) return
+    if (!apiKey.trim()) {
+      alert('Please enter your Groq API key')
+      return
+    }
     const currentType = typeRef.current   // read from ref — always fresh
     setSending(true)
     setContent('')
     try {
-      await onSend(trimmed, currentType)
+      await onSend(trimmed, currentType, apiKey.trim())
     } finally {
       setSending(false)
     }
@@ -84,6 +90,32 @@ export default function Composer({ onSend, disabled }: Props) {
           />
 
           <div className="flex items-center gap-1 px-3 pb-2.5 border-t border-border/60">
+            {/* Groq API Key input */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowApiKey(!showApiKey)}
+                className={cn(
+                  'px-3 py-1 rounded-full text-[12px] font-medium border transition-all flex items-center gap-1.5',
+                  apiKey.trim()
+                    ? 'bg-green-500/20 border-green-500/50 text-green-400'
+                    : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted'
+                )}
+              >
+                <Key className="w-3 h-3" />
+                API
+              </button>
+              {showApiKey && (
+                <input
+                  type="password"
+                  value={apiKey}
+                  onChange={e => setApiKey(e.target.value)}
+                  placeholder="gsk_..."
+                  className="absolute left-0 top-full mt-1 w-40 h-8 px-2 py-1 rounded border bg-background text-[12px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[var(--primary-ring)]"
+                />
+              )}
+            </div>
+
             {/* Type pills — clicking updates both state (UI) and ref (submit uses ref) */}
             {(['flowchart', 'mindmap'] as DiagramType[]).map(t => (
               <button

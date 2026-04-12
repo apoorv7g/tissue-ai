@@ -59,10 +59,10 @@ export default function ChatPage(_: Props) {
   // Find the last message with a diagram
   const diagramMessage = [...messages].reverse().find(m => m.diagram)
 
-  async function handleSend(content: string, diagramType: 'flowchart' | 'mindmap') {
+  async function handleSend(content: string, diagramType: 'flowchart' | 'mindmap', apiKey: string) {
     setSending(true)
     try {
-      const updated = await sendMessage(chatId, content, diagramType)
+      const updated = await sendMessage(chatId, content, diagramType, apiKey)
       setMessages(updated)
     } finally {
       setSending(false)

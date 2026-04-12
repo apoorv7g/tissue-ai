@@ -74,8 +74,9 @@ export async function sendMessage(
   chatId: string,
   content: string,
   diagramType: 'flowchart' | 'mindmap',
+  apiKey: string,
 ): Promise<Message[]> {
-  const body = new URLSearchParams({ content, diagram_type: diagramType })
+  const body = new URLSearchParams({ content, diagram_type: diagramType, api_key: apiKey })
   const d = await req<{ items: Message[] }>(`/api/chats/${chatId}/messages`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },

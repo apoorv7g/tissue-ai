@@ -26,7 +26,7 @@ def _strip_fences(text: str) -> str:
     return clean.strip()
 
 
-def generate_raw_diagram(text: str, diagram_type: DiagramType) -> tuple[dict[str, Any], int]:
+def generate_raw_diagram(text: str, diagram_type: DiagramType, api_key: str) -> tuple[dict[str, Any], int]:
     start = time.perf_counter()
 
     payload = {
@@ -44,7 +44,7 @@ def generate_raw_diagram(text: str, diagram_type: DiagramType) -> tuple[dict[str
             response = client.post(
                 'https://api.groq.com/openai/v1/chat/completions',
                 headers={
-                    'Authorization': f'Bearer {settings.groq_api_key}',
+                    'Authorization': f'Bearer {api_key}',
                     'Content-Type': 'application/json',
                 },
                 json=payload,
