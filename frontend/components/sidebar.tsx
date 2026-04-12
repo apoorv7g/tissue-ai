@@ -32,12 +32,6 @@ function ApiKeyPopup({ onSave }: ApiKeyProps) {
     getMe().then(r => setEmail(r.email)).catch(() => {})
   }, [])
 
-  function handleSave() {
-    if (apiKey.trim()) {
-      onSave(apiKey.trim())
-    }
-  }
-
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
@@ -61,8 +55,9 @@ function ApiKeyPopup({ onSave }: ApiKeyProps) {
         />
         <div className="flex gap-2">
           <button
-            onClick={handleSave}
-            className="flex-1 h-9 rounded bg-primary text-primary-foreground text-sm font-medium hover:opacity-88 transition-all"
+            onClick={() => apiKey.trim() && onSave(apiKey.trim())}
+            disabled={!apiKey.trim()}
+            className="flex-1 h-9 rounded bg-primary text-primary-foreground text-sm font-medium hover:opacity-88 transition-all disabled:opacity-50"
           >
             OK
           </button>
@@ -156,28 +151,10 @@ export default function Sidebar({
         </button>
       </div>
 
-      {/* Profile Popup */}
-      {apiKeyOpen && (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="absolute bottom-14 left-2 right-2 bg-card border border-border rounded-lg shadow-lg p-3 flex flex-col gap-2"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">{email || 'Loading...'}</span>
-            <button onClick={() => setApiKeyOpen(false)} className="text-muted-foreground hover:text-foreground">
-              <X className="w-3 h-3" />
-            </button>
-          </div>
-          <input
-            type="password"
-            value={apiKey}
-            onChange={e => setApiKey(e.target.value)}
-            placeholder="Groq API Key (gsk_...)"
-            className="w-full h-8 px-2 rounded border border-border bg-background text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[var(--primary-ring)]"
-          />
-        </motion.div>
-      )}
+      {/* API Key Modal */}
+      <AnimatePresence>
+        {apiKeyOpen && <ApiKeyPopup onSave={(key) => { setApiKeyOpen(false); onLogout(); }} />}
+      </AnimatePresence>
     </aside>
   )
 }
