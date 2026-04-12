@@ -14,7 +14,7 @@ export default function Composer({ onSend, disabled }: Props) {
   const [content, setContent] = useState('')
   const [type, setType] = useState<DiagramType>('flowchart')
   const [sending, setSending] = useState(false)
-  const [apiKey, setApiKey] = useState('')
+  const [apiKey, setApiKey] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('groq_api_key') || '' : '')
   const [showApiKey, setShowApiKey] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 

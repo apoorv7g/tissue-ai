@@ -153,7 +153,7 @@ export default function Sidebar({
 
       {/* API Key Modal */}
       <AnimatePresence>
-        {apiKeyOpen && <ApiKeyPopup onSave={(key) => { setApiKeyOpen(false); onLogout(); }} />}
+        {apiKeyOpen && <ApiKeyPopup onSave={(key) => { setApiKeyOpen(false); localStorage.setItem('groq_api_key', key); }} />}
       </AnimatePresence>
     </aside>
   )
