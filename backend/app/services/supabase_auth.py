@@ -49,7 +49,7 @@ class SupabaseAuthService:
 
         data = response.json()
         if 'session' not in data or not data['session']:
-            raise SupabaseAuthError('Signup did not return a session. Disable email confirmation for MVP.')
+            return self.login(email, password)
         return data
 
     def login(self, email: str, password: str) -> dict[str, Any]:
