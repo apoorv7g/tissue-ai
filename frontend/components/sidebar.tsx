@@ -1,8 +1,9 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Pencil, Trash2, LogOut, Loader2, User, Key, X } from 'lucide-react'
 import { cn, formatDate } from '@/lib/utils'
+import { getMe } from '@/lib/api'
 import type { Chat } from '@/lib/types'
 
 
@@ -19,12 +20,22 @@ interface Props {
   onLogout: () => Promise<void>
 }
 
+
+
 export default function Sidebar({
   chats, loading, currentChatId,
   onNewChat, onSelectChat, onDeleteChat, onRenameChat, onLogout,
+  userEmail = '',
+  userApiKey = '',
 }: Props) {
   const [creating, setCreating] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
+  const [email, setEmail] = useState(userEmail)
+  const [apiKey, setApiKey] = useState(userApiKey)
+
+  useEffect(() => {
+    getMe().then(r => setEmail(r.email)).catch(() => {})
+  }, [])
 
   async function handleNew() {
     if (creating) return
@@ -111,13 +122,15 @@ export default function Sidebar({
           className="absolute bottom-14 left-2 right-2 bg-card border border-border rounded-lg shadow-lg p-3 flex flex-col gap-2"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">user@example.com</span>
+            <span className="text-xs font-medium text-muted-foreground">{email || 'Loading...'}</span>
             <button onClick={() => setProfileOpen(false)} className="text-muted-foreground hover:text-foreground">
               <X className="w-3 h-3" />
             </button>
           </div>
           <input
             type="password"
+            value={apiKey}
+            onChange={e => setApiKey(e.target.value)}
             placeholder="Groq API Key (gsk_...)"
             className="w-full h-8 px-2 rounded border border-border bg-background text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[var(--primary-ring)]"
           />

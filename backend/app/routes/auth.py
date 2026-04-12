@@ -38,6 +38,7 @@ def signup(email: str = Form(...), password: str = Form(...)):
             access_token=str(session_data['access_token']),
             refresh_token=str(session_data['refresh_token']),
             expires_in=int(session_data.get('expires_in', 3600)),
+            email=email.strip(),
         )
 
         response = JSONResponse({'ok': True})
@@ -53,13 +54,14 @@ def login(email: str = Form(...), password: str = Form(...)):
     try:
         payload = auth_service.login(email=email.strip(), password=password)
         user_id = payload['user']['id']
-        repository.ensure_profile(user_id)
+        repository.ensure_profile(user_id, email.strip())
 
         session = make_session_payload(
             user_id=user_id,
             access_token=str(payload['access_token']),
             refresh_token=str(payload['refresh_token']),
             expires_in=int(payload.get('expires_in', 3600)),
+            email=email.strip(),
         )
 
         response = JSONResponse({'ok': True})

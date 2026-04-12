@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Send, Key } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-type DiagramType = 'flowchart' | 'mindmap'
+type DiagramType = 'flowchart' | 'mindmap' | 'sequence' | 'tree' | 'network' | 'timeline'
 
 interface Props {
   onSend: (content: string, type: DiagramType, apiKey: string) => Promise<void>
@@ -117,7 +117,7 @@ export default function Composer({ onSend, disabled }: Props) {
             </div>
 
             {/* Type pills — clicking updates both state (UI) and ref (submit uses ref) */}
-            {(['flowchart', 'mindmap'] as DiagramType[]).map(t => (
+            {(['flowchart', 'mindmap', 'sequence', 'tree', 'network', 'timeline'] as DiagramType[]).map(t => (
               <button
                 key={t}
                 type="button"

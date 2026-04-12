@@ -17,19 +17,21 @@ class SessionData:
     access_token: str
     refresh_token: str
     expires_at: int
+    email: str | None = None
 
     def is_expired(self, skew_seconds: int = 30) -> bool:
         now = int(datetime.now(timezone.utc).timestamp())
         return self.expires_at <= now + skew_seconds
 
 
-def make_session_payload(user_id: str, access_token: str, refresh_token: str, expires_in: int) -> SessionData:
+def make_session_payload(user_id: str, access_token: str, refresh_token: str, expires_in: int, email: str | None = None) -> SessionData:
     expires_at = int((datetime.now(timezone.utc) + timedelta(seconds=expires_in)).timestamp())
     return SessionData(
         user_id=user_id,
         access_token=access_token,
         refresh_token=refresh_token,
         expires_at=expires_at,
+        email=email,
     )
 
 

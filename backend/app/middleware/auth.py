@@ -30,6 +30,7 @@ class AuthSessionMiddleware(BaseHTTPMiddleware):
                             access_token=str(refreshed.get('access_token')),
                             refresh_token=str(refreshed.get('refresh_token') or session.refresh_token),
                             expires_in=int(refreshed.get('expires_in', 3600)),
+                            email=session.email,
                         )
                         session = refreshed_session
                         refreshed_cookie_value = encode_session(refreshed_session)
@@ -41,6 +42,7 @@ class AuthSessionMiddleware(BaseHTTPMiddleware):
                     request.state.current_user = CurrentUser(
                         id=session.user_id,
                         access_token=session.access_token,
+                        email=session.email,
                     )
 
         response = await call_next(request)

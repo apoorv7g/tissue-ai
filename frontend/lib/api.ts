@@ -37,6 +37,10 @@ export async function logout() {
   await fetch('/auth/logout', { method: 'POST', credentials: 'include' })
 }
 
+export async function getMe(): Promise<{ email: string }> {
+  return req('/api/me')
+}
+
 // ── Chats ─────────────────────────────────────────────────────────
 export async function listChats(): Promise<Chat[]> {
   const d = await req<{ items: Chat[] }>('/api/chats')

@@ -9,6 +9,7 @@ from fastapi import Depends, HTTPException, Request, status
 class CurrentUser:
     id: str
     access_token: str
+    email: str | None = None
 
 
 def get_current_user(request: Request) -> CurrentUser | None:

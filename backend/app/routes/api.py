@@ -185,3 +185,8 @@ async def patch_labels(version_id: str, payload: LabelOverridePayload, user: Cur
 async def get_fonts(query: str = '', user: CurrentUser = Depends(require_user)):
     items = await run_in_threadpool(search_fonts, query)
     return {'items': items}
+
+
+@router.get('/me')
+async def get_me(user: CurrentUser = Depends(require_user)):
+    return {'email': user.email}
