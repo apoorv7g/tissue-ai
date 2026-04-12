@@ -394,4 +394,122 @@ def apply_layout(raw: dict[str, Any], diagram_type: str = 'flowchart') -> dict[s
 
     if diagram_type == 'mindmap':
         return _apply_mindmap_layout(raw_nodes, raw_edges)
+    elif diagram_type == 'tree':
+        return _apply_tree_layout(raw_nodes, raw_edges)
+    elif diagram_type == 'sequence':
+        return _apply_sequence_layout(raw_nodes, raw_edges)
+    elif diagram_type == 'network':
+        return _apply_network_layout(raw_nodes, raw_edges)
+    elif diagram_type == 'timeline':
+        return _apply_timeline_layout(raw_nodes, raw_edges)
+    return _apply_flowchart_layout(raw_nodes, raw_edges)
+
+
+def _apply_tree_layout(raw_nodes: list[dict], raw_edges: list[dict]) -> dict[str, list[dict]]:
+    if not raw_nodes:
+        return {'nodes': [], 'edges': []}
+    node_ids = {str(n.get('id')) for n in raw_nodes}
+    children = defaultdict(list)
+    for e in raw_edges:
+        src, tgt = str(e.get('from')), str(e.get('to'))
+        if src in node_ids and tgt in node_ids:
+            children[src].append(tgt)
+    levels = {}
+    root_id = str(raw_nodes[0].get('id'))
+    queue = deque([(root_id, 0)])
+    while queue:
+        nid, lvl = queue.popleft()
+        if nid not in levels:
+            levels[nid] = lvl
+            for ch in children.get(nid, []):
+                queue.append((ch, lvl + 1))
+    level_nodes = defaultdict(list)
+    for nid, lvl in levels.items():
+        level_nodes[lvl].append(nid)
+    positions = {}
+    for lvl, nids in level_nodes.items():
+        y = lvl * 180 + 100
+        for i, nid in enumerate(nids):
+            x = (i - (len(nids) - 1) / 2) * 160
+            positions[nid] = (x, y)
+    nodes = []
+    for node in raw_nodes:
+        nid = str(node.get('id'))
+        x, y = positions.get(nid, (0.0, 0.0))
+        nodes.append({
+            'id': nid, 'label': str(node.get('label') or nid), 'shape': 'roundedRect',
+            'x': x, 'y': y, 'w': 140, 'h': 55,
+            'fill': '#f0f4ff', 'stroke': '#3b82f6', 'textColor': '#1e3a5f',
+            'fontSize': 12, 'fontFamily': 'Inter',
+        })
+    edges = _build_edges(raw_edges, node_ids)
+    return {'nodes': nodes, 'edges': edges}
+
+
+def _apply_sequence_layout(raw_nodes: list[dict], raw_edges: list[dict]) -> dict[str, list[dict]]:
+    if not raw_nodes:
+        return {'nodes': [], 'edges': []}
+    node_ids = {str(n.get('id')) for n in raw_nodes}
+    nodes = []
+    for i, node in enumerate(raw_nodes):
+        nid = str(node.get('id'))
+        nodes.append({
+            'id': nid, 'label': str(node.get('label') or nid), 'shape': 'roundedRect',
+            'x': i * 200 + 100, 'y': 200, 'w': 130, 'h': 55,
+            'fill': '#ecfeff', 'stroke': '#06b6d4', 'textColor': '#164e63',
+            'fontSize': 12, 'fontFamily': 'Inter',
+        })
+    edges = _build_edges(raw_edges, node_ids)
+    return {'nodes': nodes, 'edges': edges}
+
+
+def _apply_network_layout(raw_nodes: list[dict], raw_edges: list[dict]) -> dict[str, list[dict]]:
+    if not raw_nodes:
+        return {'nodes': [], 'edges': []}
+    node_ids = {str(n.get('id')) for n in raw_nodes}
+    positions = {}
+    colors = ['#ecfdf5', '#fdf4ff', '#fff7ed', '#f0fdfa', '#f5f3ff', '#fffbeb']
+    for i, node in enumerate(raw_nodes):
+        nid = str(node.get('id'))
+        angle = (i / len(raw_nodes)) * 2 * math.pi
+        r = min(200, len(raw_nodes) * 35)
+        positions[nid] = (350 + r * math.cos(angle), 280 + r * math.sin(angle))
+    nodes = []
+    for i, node in enumerate(raw_nodes):
+        nid = str(node.get('id'))
+        x, y = positions.get(nid, (0.0, 0.0))
+        col = colors[i % len(colors)]
+        nodes.append({
+            'id': nid, 'label': str(node.get('label') or nid), 'shape': 'circle',
+            'x': x, 'y': y, 'w': 90, 'h': 90,
+            'fill': col, 'stroke': '#6366f1', 'textColor': '#312e81',
+            'fontSize': 11, 'fontFamily': 'Inter',
+        })
+    edges = _build_edges(raw_edges, node_ids)
+    return {'nodes': nodes, 'edges': edges}
+
+
+def _apply_timeline_layout(raw_nodes: list[dict], raw_edges: list[dict]) -> dict[str, list[dict]]:
+    if not raw_nodes:
+        return {'nodes': [], 'edges': []}
+    node_ids = {str(n.get('id')) for n in raw_nodes}
+    nodes = []
+    for i, node in enumerate(raw_nodes):
+        nid = str(node.get('id'))
+        is_start = node.get('type') == 'start'
+        is_end = node.get('type') == 'end'
+        if is_start:
+            shape, fill, stroke, tc = 'startEnd', '#ecfdf5', '#10b981', '#064e3b'
+        elif is_end:
+            shape, fill, stroke, tc = 'startEnd', '#fff1f2', '#f43f5e', '#881337'
+        else:
+            shape, fill, stroke, tc = 'diamond', '#fffbeb', '#f59e0b', '#78350f'
+        nodes.append({
+            'id': nid, 'label': str(node.get('label') or nid), 'shape': shape,
+            'x': i * 180 + 100, 'y': 250, 'w': 95, 'h': 55,
+            'fill': fill, 'stroke': stroke, 'textColor': tc,
+            'fontSize': 11, 'fontFamily': 'Inter',
+        })
+    edges = _build_edges(raw_edges, node_ids)
+    return {'nodes': nodes, 'edges': edges}
     return _apply_flowchart_layout(raw_nodes, raw_edges)
