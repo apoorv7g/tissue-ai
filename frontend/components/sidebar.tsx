@@ -75,8 +75,7 @@ function ApiKeyPopup({ onSave }: ApiKeyProps) {
 export default function Sidebar({
   chats, loading, currentChatId,
   onNewChat, onSelectChat, onDeleteChat, onRenameChat, onLogout,
-}: Props) {
-  const [creating, setCreating] = useState(false)
+} : Props) {
   const [creating, setCreating] = useState(false)
   const [apiKeyOpen, setApiKeyOpen] = useState(false)
 
