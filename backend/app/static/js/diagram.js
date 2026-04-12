@@ -732,7 +732,9 @@
 
       /* Background (extends far beyond viewport for panning) */
       const P = 20000;
-      svg.appendChild(svgEl('rect', { x: vb.x - P, y: vb.y - P, width: vb.w + P*2, height: vb.h + P*2, fill: '#111018' }));
+      const isLight = document.documentElement.classList.contains('light');
+      const bgColor = isLight ? '#f5f5f5' : '#111018';
+      svg.appendChild(svgEl('rect', { x: vb.x - P, y: vb.y - P, width: vb.w + P*2, height: vb.h + P*2, fill: bgColor }));
       svg.appendChild(svgEl('rect', { x: vb.x - P, y: vb.y - P, width: vb.w + P*2, height: vb.h + P*2, fill: `url(#${dotId})` }));
 
       /* Edges */
@@ -901,7 +903,8 @@
       const cvs = document.createElement('canvas');
       cvs.width = full.w * scale; cvs.height = full.h * scale;
       const ctx = cvs.getContext('2d');
-      ctx.fillStyle = '#111018';
+      const bgColor = isLight ? '#f5f5f5' : '#111018';
+      ctx.fillStyle = bgColor;
       ctx.fillRect(0, 0, cvs.width, cvs.height);
       ctx.drawImage(img, 0, 0, cvs.width, cvs.height);
 
