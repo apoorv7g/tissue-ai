@@ -12,7 +12,10 @@
     <div class="app-container">
         <header>
             <div class="logo">Tissue <span>AI</span></div>
-            <div class="header-tag">Text to Visualization</div>
+            <div class="header-actions">
+                <div class="header-tag">Text to Visualization</div>
+                <button class="btn-tool btn-theme-open" id="btn-theme" type="button">Theme</button>
+            </div>
         </header>
 
         <div class="main-content">
@@ -66,9 +69,21 @@
                     <div class="toolbar-actions">
                         <button class="btn-tool" id="btn-zoom-in" title="Zoom In">+</button>
                         <button class="btn-tool" id="btn-zoom-out" title="Zoom Out">-</button>
+                        <button class="btn-tool" id="btn-reset" title="Reset View">Reset</button>
+                        <div class="export-menu">
+                            <button class="btn-tool btn-export-trigger" id="btn-export" title="Export Diagram" type="button">
+                                Export
+                            </button>
+                            <div class="export-menu-panel" id="export-menu">
+                                <button class="export-menu-item" data-export="svg" type="button">SVG</button>
+                                <button class="export-menu-item" data-export="png" type="button">PNG</button>
+                                <button class="export-menu-item" data-export="pdf" type="button">PDF</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div id="canvas-area">
+                    <div class="canvas-hint">Double-click a node to edit text. Alt+Click also works.</div>
                     <div class="canvas-placeholder" id="placeholder">
                         <div class="icon-placeholder">&gt;_</div>
                         <p>Your diagram will appear here</p>
@@ -78,6 +93,98 @@
         </div>
     </div>
 
+    <div class="theme-modal-backdrop" id="theme-modal-backdrop" hidden>
+        <div class="theme-modal" role="dialog" aria-modal="true" aria-labelledby="theme-modal-title">
+            <div class="theme-modal-header">
+                <div>
+                    <p class="theme-modal-kicker">Theme Studio</p>
+                    <h3 id="theme-modal-title">Saved themes and colors</h3>
+                </div>
+                <button class="btn-icon" id="btn-theme-close" type="button">Close</button>
+            </div>
+
+            <div class="theme-modal-body">
+                <section class="theme-library">
+                    <div class="section-label-row">
+                        <label>Saved Themes</label>
+                        <span>Stored in localStorage</span>
+                    </div>
+                    <div class="theme-library-list" id="theme-library-list"></div>
+                </section>
+
+                <section class="theme-panel">
+                    <div class="theme-panel-header">
+                        <label for="theme-select">Active Theme</label>
+                        <select id="theme-select"></select>
+                    </div>
+
+                    <div class="theme-editor-grid">
+                        <div class="color-field">
+                            <label for="theme-canvas-bg">Canvas</label>
+                            <input type="color" id="theme-canvas-bg" />
+                        </div>
+                        <div class="color-field">
+                            <label for="theme-grid-color">Grid</label>
+                            <input type="color" id="theme-grid-color" />
+                        </div>
+                        <div class="color-field">
+                            <label for="theme-flow-start">Flow Start</label>
+                            <input type="color" id="theme-flow-start" />
+                        </div>
+                        <div class="color-field">
+                            <label for="theme-flow-process">Flow Process</label>
+                            <input type="color" id="theme-flow-process" />
+                        </div>
+                        <div class="color-field">
+                            <label for="theme-flow-decision">Flow Decision</label>
+                            <input type="color" id="theme-flow-decision" />
+                        </div>
+                        <div class="color-field">
+                            <label for="theme-flow-end">Flow End</label>
+                            <input type="color" id="theme-flow-end" />
+                        </div>
+                        <div class="color-field">
+                            <label for="theme-mind-root">Mind Root</label>
+                            <input type="color" id="theme-mind-root" />
+                        </div>
+                        <div class="color-field">
+                            <label for="theme-mind-branch">Mind Branch</label>
+                            <input type="color" id="theme-mind-branch" />
+                        </div>
+                        <div class="color-field">
+                            <label for="theme-mind-leaf">Mind Leaf</label>
+                            <input type="color" id="theme-mind-leaf" />
+                        </div>
+                    </div>
+
+                    <div class="theme-save-row">
+                        <input
+                            type="text"
+                            id="theme-name"
+                            placeholder="Save as custom theme"
+                            autocomplete="off"
+                        />
+                        <button class="btn-secondary" id="btn-save-theme" type="button">
+                            Save Theme
+                        </button>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <div class="node-editor-backdrop" id="node-editor-backdrop" hidden>
+        <div class="node-editor-dialog" role="dialog" aria-modal="true" aria-labelledby="node-editor-title">
+            <h3 id="node-editor-title">Edit node text</h3>
+            <input type="text" id="node-editor-input" autocomplete="off" />
+            <div class="node-editor-actions">
+                <button class="btn-secondary" id="btn-node-cancel" type="button">Cancel</button>
+                <button class="btn-primary" id="btn-node-save" type="button">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
     <script src="/static/app.js"></script>
 </body>
 </html>

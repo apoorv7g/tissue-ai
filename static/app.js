@@ -16,12 +16,116 @@ let nodeSizesGlobal = {};
 // Edge draw function reference
 let redrawEdges = null;
 
+const STORAGE_KEYS = {
+    themes: "tissue-ai-custom-themes",
+    activeTheme: "tissue-ai-active-theme",
+};
+
+const BASE_THEMES = [
+    {
+        id: "midnight-aurora",
+        name: "Midnight Aurora",
+        canvasBg: "#0c0c12",
+        canvasGrid: "#1a1a2a",
+        flowchart: {
+            start: "#052e16",
+            process: "#1e1b4b",
+            decision: "#422006",
+            end: "#450a0a",
+        },
+        mindmap: {
+            root: "#4f46e5",
+            branch: "#1e1b4b",
+            leaf: "#18181b",
+        },
+    },
+    {
+        id: "ember-ink",
+        name: "Ember Ink",
+        canvasBg: "#120f0c",
+        canvasGrid: "#2a201a",
+        flowchart: {
+            start: "#7c2d12",
+            process: "#78350f",
+            decision: "#92400e",
+            end: "#991b1b",
+        },
+        mindmap: {
+            root: "#ea580c",
+            branch: "#7c2d12",
+            leaf: "#292524",
+        },
+    },
+    {
+        id: "light-clarity",
+        name: "Light Clarity",
+        canvasBg: "#f8f9fc",
+        canvasGrid: "#e5e7eb",
+        flowchart: {
+            start: "#10b981",
+            process: "#3b82f6",
+            decision: "#f59e0b",
+            end: "#ef4444",
+        },
+        mindmap: {
+            root: "#1f2937",
+            branch: "#4b5563",
+            leaf: "#9ca3af",
+        },
+    },
+    {
+        id: "dark-slate",
+        name: "Dark Slate",
+        canvasBg: "#1a1f2e",
+        canvasGrid: "#2d3748",
+        flowchart: {
+            start: "#34d399",
+            process: "#60a5fa",
+            decision: "#fbbf24",
+            end: "#f87171",
+        },
+        mindmap: {
+            root: "#6366f1",
+            branch: "#2d3748",
+            leaf: "#4b5563",
+        },
+    },
+];
+
+const btnExport = document.getElementById("btn-export");
+const exportMenuPanel = document.getElementById("export-menu");
+const exportMenuContainer = btnExport ? btnExport.closest(".export-menu") : null;
+const btnTheme = document.getElementById("btn-theme");
+const themeModalBackdrop = document.getElementById("theme-modal-backdrop");
+const btnThemeClose = document.getElementById("btn-theme-close");
+const themeLibraryList = document.getElementById("theme-library-list");
+const themeSelect = document.getElementById("theme-select");
+const themeNameInput = document.getElementById("theme-name");
+const btnSaveTheme = document.getElementById("btn-save-theme");
+const themeCanvasBgInput = document.getElementById("theme-canvas-bg");
+const themeGridColorInput = document.getElementById("theme-grid-color");
+const themeFlowStartInput = document.getElementById("theme-flow-start");
+const themeFlowProcessInput = document.getElementById("theme-flow-process");
+const themeFlowDecisionInput = document.getElementById("theme-flow-decision");
+const themeFlowEndInput = document.getElementById("theme-flow-end");
+const themeMindRootInput = document.getElementById("theme-mind-root");
+const themeMindBranchInput = document.getElementById("theme-mind-branch");
+const themeMindLeafInput = document.getElementById("theme-mind-leaf");
+const nodeEditorBackdrop = document.getElementById("node-editor-backdrop");
+const nodeEditorInput = document.getElementById("node-editor-input");
+const btnNodeSave = document.getElementById("btn-node-save");
+const btnNodeCancel = document.getElementById("btn-node-cancel");
+
+let themeState = loadThemeState();
+let currentTheme = getThemeById(themeState.activeThemeId) || BASE_THEMES[0];
+let editingNodeId = null;
+
 // ── DOM ──
 const btnGenerate = document.getElementById("btn-generate");
 const btnZoomIn = document.getElementById("btn-zoom-in");
 const btnZoomOut = document.getElementById("btn-zoom-out");
 const btnReset = document.getElementById("btn-reset");
-const btnExport = document.getElementById("btn-export");
+// const btnExport = document.getElementById("btn-export");
 const canvasArea = document.getElementById("canvas-area");
 const placeholder = document.getElementById("placeholder");
 const statusBar = document.getElementById("status-bar");
@@ -57,6 +161,383 @@ function svgPoint(svg, clientX, clientY) {
     pt.x = clientX;
     pt.y = clientY;
     return pt.matrixTransform(svg.getScreenCTM().inverse());
+}
+
+function clampByte(value) {
+    return Math.max(0, Math.min(255, value));
+}
+
+function hexToRgb(hex) {
+    const normalized = hex.replace("#", "").trim();
+    const value = normalized.length === 3
+        ? normalized
+              .split("")
+              .map((char) => char + char)
+              .join("")
+        : normalized;
+    return {
+        r: parseInt(value.slice(0, 2), 16),
+        g: parseInt(value.slice(2, 4), 16),
+        b: parseInt(value.slice(4, 6), 16),
+    };
+}
+
+function rgbToHex(r, g, b) {
+    return (
+        "#" +
+        [r, g, b]
+            .map((value) => clampByte(Math.round(value)).toString(16).padStart(2, "0"))
+            .join("")
+    );
+}
+
+function mixColor(colorA, colorB, weight) {
+    const a = hexToRgb(colorA);
+    const b = hexToRgb(colorB);
+    return rgbToHex(
+        a.r + (b.r - a.r) * weight,
+        a.g + (b.g - a.g) * weight,
+        a.b + (b.b - a.b) * weight
+    );
+}
+
+function getContrastingTextColor(hex) {
+    const { r, g, b } = hexToRgb(hex);
+    const luminance = (r * 299 + g * 587 + b * 114) / 1000;
+    return luminance > 145 ? "#111111" : "#f8fafc";
+}
+
+function buildNodePalette(fill) {
+    return {
+        fill,
+        stroke: mixColor(fill, "#ffffff", 0.18),
+        text: getContrastingTextColor(fill),
+    };
+}
+
+function loadThemeState() {
+    const savedThemes = loadSavedThemes();
+    const activeThemeId =
+        localStorage.getItem(STORAGE_KEYS.activeTheme) || BASE_THEMES[0].id;
+    return {
+        savedThemes,
+        activeThemeId,
+    };
+}
+
+function loadSavedThemes() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEYS.themes);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+    } catch {
+        return [];
+    }
+}
+
+function persistThemes() {
+    localStorage.setItem(STORAGE_KEYS.themes, JSON.stringify(themeState.savedThemes));
+    localStorage.setItem(STORAGE_KEYS.activeTheme, themeState.activeThemeId);
+}
+
+function getAllThemes() {
+    return [...BASE_THEMES, ...themeState.savedThemes];
+}
+
+function getThemeById(id) {
+    return getAllThemes().find((theme) => theme.id === id);
+}
+
+function getSavedThemeById(id) {
+    return themeState.savedThemes.find((theme) => theme.id === id);
+}
+
+function cloneTheme(theme) {
+    return JSON.parse(JSON.stringify(theme));
+}
+
+function themeFromControls(name = "Custom Theme") {
+    return {
+        id: `custom-${Date.now()}`,
+        name,
+        canvasBg: themeCanvasBgInput.value,
+        canvasGrid: themeGridColorInput.value,
+        flowchart: {
+            start: themeFlowStartInput.value,
+            process: themeFlowProcessInput.value,
+            decision: themeFlowDecisionInput.value,
+            end: themeFlowEndInput.value,
+        },
+        mindmap: {
+            root: themeMindRootInput.value,
+            branch: themeMindBranchInput.value,
+            leaf: themeMindLeafInput.value,
+        },
+    };
+}
+
+function applyThemeToControls(theme) {
+    themeCanvasBgInput.value = theme.canvasBg;
+    themeGridColorInput.value = theme.canvasGrid;
+    themeFlowStartInput.value = theme.flowchart.start;
+    themeFlowProcessInput.value = theme.flowchart.process;
+    themeFlowDecisionInput.value = theme.flowchart.decision;
+    themeFlowEndInput.value = theme.flowchart.end;
+    themeMindRootInput.value = theme.mindmap.root;
+    themeMindBranchInput.value = theme.mindmap.branch;
+    themeMindLeafInput.value = theme.mindmap.leaf;
+}
+
+function applyThemeToPage(theme) {
+    currentTheme = cloneTheme(theme);
+    document.documentElement.style.setProperty("--canvas-bg", theme.canvasBg);
+    document.documentElement.style.setProperty("--canvas-grid", theme.canvasGrid);
+
+    if (themeSelect) {
+        themeSelect.value = theme.id;
+    }
+
+    if (themeNameInput) {
+        themeNameInput.value = theme.name;
+    }
+
+    applyThemeToControls(theme);
+}
+
+function renderThemeOptions() {
+    if (!themeSelect) return;
+    const themes = getAllThemes();
+    themeSelect.innerHTML = themes
+        .map((theme) => `<option value="${theme.id}">${theme.name}</option>`)
+        .join("");
+    if (getThemeById(themeState.activeThemeId)) {
+        themeSelect.value = themeState.activeThemeId;
+    }
+}
+
+function renderThemeLibrary() {
+    if (!themeLibraryList) return;
+    const themes = getAllThemes();
+    if (themes.length === 0) {
+        themeLibraryList.innerHTML = '<p class="theme-empty-state">No saved themes yet.</p>';
+        return;
+    }
+
+    themeLibraryList.innerHTML = themes
+        .map((theme) => {
+            const swatches = [
+                theme.canvasBg,
+                theme.canvasGrid,
+                theme.flowchart?.start || theme.flowchart?.process,
+                theme.flowchart?.decision || theme.mindmap?.branch,
+                theme.mindmap?.root || theme.flowchart?.end,
+            ]
+                .filter(Boolean)
+                .map((color) => `<span class="theme-swatch" style="background:${color}"></span>`)
+                .join("");
+
+            const isSaved = Boolean(getSavedThemeById(theme.id));
+            const isActive = theme.id === themeState.activeThemeId;
+
+            return `
+                <article class="theme-card ${isActive ? "active" : ""}">
+                    <div class="theme-card-top">
+                        <div>
+                            <div class="theme-card-name">${theme.name}</div>
+                            <div class="theme-card-meta">${isSaved ? "Custom theme" : "Built-in theme"}</div>
+                        </div>
+                        ${isActive ? '<span class="theme-card-badge">Active</span>' : ""}
+                    </div>
+                    <div class="theme-swatches">${swatches}</div>
+                    <div class="theme-card-actions">
+                        <button class="btn-secondary" data-theme-apply="${theme.id}" type="button">Apply</button>
+                        ${isSaved ? `<button class="btn-secondary" data-theme-delete="${theme.id}" type="button">Delete</button>` : ""}
+                    </div>
+                </article>
+            `;
+        })
+        .join("");
+
+    themeLibraryList.querySelectorAll("[data-theme-apply]").forEach((button) => {
+        button.addEventListener("click", () => updateThemeSelection(button.dataset.themeApply));
+    });
+
+    themeLibraryList.querySelectorAll("[data-theme-delete]").forEach((button) => {
+        button.addEventListener("click", () => {
+            const themeId = button.dataset.themeDelete;
+            themeState.savedThemes = themeState.savedThemes.filter((theme) => theme.id !== themeId);
+            if (themeState.activeThemeId === themeId) {
+                themeState.activeThemeId = BASE_THEMES[0].id;
+                applyThemeToPage(BASE_THEMES[0]);
+            }
+            persistThemes();
+            renderThemeOptions();
+            renderThemeLibrary();
+        });
+    });
+}
+
+function openThemeModal() {
+    if (!themeModalBackdrop) return;
+    themeModalBackdrop.hidden = false;
+    renderThemeOptions();
+    renderThemeLibrary();
+}
+
+function closeThemeModal() {
+    if (!themeModalBackdrop) return;
+    themeModalBackdrop.hidden = true;
+}
+
+function updateThemeSelection(themeId) {
+    const theme = getThemeById(themeId);
+    if (!theme) return;
+    themeState.activeThemeId = themeId;
+    persistThemes();
+    applyThemeToPage(theme);
+    renderThemeLibrary();
+    if (diagramData) {
+        renderDiagram();
+    }
+}
+
+function saveCurrentTheme() {
+    const themeName = themeNameInput.value.trim() || "Custom Theme";
+    const existingSavedTheme = getSavedThemeById(currentTheme.id);
+    const themeId = existingSavedTheme ? currentTheme.id : `custom-${Date.now()}`;
+    const theme = {
+        id: themeId,
+        name: themeName,
+        canvasBg: themeCanvasBgInput.value,
+        canvasGrid: themeGridColorInput.value,
+        flowchart: {
+            start: themeFlowStartInput.value,
+            process: themeFlowProcessInput.value,
+            decision: themeFlowDecisionInput.value,
+            end: themeFlowEndInput.value,
+        },
+        mindmap: {
+            root: themeMindRootInput.value,
+            branch: themeMindBranchInput.value,
+            leaf: themeMindLeafInput.value,
+        },
+    };
+    themeState.savedThemes = [
+        ...themeState.savedThemes.filter((item) => item.id !== theme.id && item.name !== themeName),
+        theme,
+    ];
+    themeState.activeThemeId = theme.id;
+    persistThemes();
+    renderThemeOptions();
+    renderThemeLibrary();
+    applyThemeToPage(theme);
+    themeNameInput.value = theme.name;
+    if (diagramData) {
+        renderDiagram();
+    }
+}
+
+function updateThemeFromInputs() {
+    currentTheme.name = themeNameInput.value.trim() || currentTheme.name || "Custom Theme";
+    currentTheme.canvasBg = themeCanvasBgInput.value;
+    currentTheme.canvasGrid = themeGridColorInput.value;
+    currentTheme.flowchart = {
+        start: themeFlowStartInput.value,
+        process: themeFlowProcessInput.value,
+        decision: themeFlowDecisionInput.value,
+        end: themeFlowEndInput.value,
+    };
+    currentTheme.mindmap = {
+        root: themeMindRootInput.value,
+        branch: themeMindBranchInput.value,
+        leaf: themeMindLeafInput.value,
+    };
+    document.documentElement.style.setProperty("--canvas-bg", currentTheme.canvasBg);
+    document.documentElement.style.setProperty("--canvas-grid", currentTheme.canvasGrid);
+    if (diagramData) {
+        renderDiagram();
+    }
+}
+
+function getCurrentTheme() {
+    return cloneTheme(currentTheme);
+}
+
+function openNodeEditor(nodeId) {
+    if (!nodeEditorBackdrop || !nodeEditorInput) return;
+    const node = findNodeById(diagramData, nodeId);
+    if (!node) return;
+    editingNodeId = nodeId;
+    nodeEditorInput.value = node.label || "";
+    nodeEditorBackdrop.hidden = false;
+    nodeEditorInput.focus();
+    nodeEditorInput.select();
+}
+
+function attachNodeEditTriggers(group, nodeId) {
+    group.addEventListener("dblclick", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        openNodeEditor(nodeId);
+    });
+
+    group.addEventListener("click", (event) => {
+        if (event.altKey) {
+            event.preventDefault();
+            event.stopPropagation();
+            openNodeEditor(nodeId);
+        }
+    });
+}
+
+function closeNodeEditor() {
+    if (!nodeEditorBackdrop) return;
+    editingNodeId = null;
+    nodeEditorBackdrop.hidden = true;
+}
+
+function findNodeById(data, nodeId) {
+    if (!data) return null;
+    if (diagramType === "flowchart") {
+        return (data.nodes || []).find((node) => node.id === nodeId) || null;
+    }
+
+    function walk(node) {
+        if (!node) return null;
+        if (node.id === nodeId) return node;
+        for (const child of node.children || []) {
+            const match = walk(child);
+            if (match) return match;
+        }
+        return null;
+    }
+
+    return walk(data.root);
+}
+
+function updateNodeLabel(nodeId, label) {
+    if (!diagramData) return;
+    const node = findNodeById(diagramData, nodeId);
+    if (!node) return;
+    node.label = label;
+}
+
+function updateThemeVarsFromCurrentTheme() {
+    document.documentElement.style.setProperty("--canvas-bg", currentTheme.canvasBg);
+    document.documentElement.style.setProperty("--canvas-grid", currentTheme.canvasGrid);
+}
+
+function sanitizeFileStem(value) {
+    return value.replace(/[^a-z0-9-_]+/gi, "-").replace(/^-+|-+$/g, "").toLowerCase() || "diagram";
+}
+
+async function svgToDataUrl(svg) {
+    const serializer = new XMLSerializer();
+    const source = serializer.serializeToString(svg);
+    const blob = new Blob([`<?xml version="1.0" standalone="no"?>\r\n${source}`], {
+        type: "image/svg+xml;charset=utf-8",
+    });
+    return URL.createObjectURL(blob);
 }
 
 // ── Status Helpers ──
@@ -563,13 +1044,13 @@ function renderFlowchart(data) {
     redrawEdges = drawEdges;
     drawEdges();
 
-    // Node colors
+    const theme = getCurrentTheme();
     const typeColors = {
-        start: { fill: "#052e16", stroke: "#22c55e", text: "#86efac" },
-        end: { fill: "#450a0a", stroke: "#ef4444", text: "#fca5a5" },
-        process: { fill: "#1e1b4b", stroke: "#6366f1", text: "#c7d2fe" },
-        decision: { fill: "#422006", stroke: "#f59e0b", text: "#fde68a" },
-        default: { fill: "#18181b", stroke: "#6366f1", text: "#e4e4e7" },
+        start: buildNodePalette(theme.flowchart.start),
+        end: buildNodePalette(theme.flowchart.end),
+        process: buildNodePalette(theme.flowchart.process),
+        decision: buildNodePalette(theme.flowchart.decision),
+        default: buildNodePalette(theme.flowchart.process),
     };
 
     nodes.forEach((node) => {
@@ -651,6 +1132,7 @@ function renderFlowchart(data) {
         nodeElements[node.id].group = g;
 
         makeNodeDraggable(svg, g, node.id);
+        attachNodeEditTriggers(g, node.id);
         nodesGroup.appendChild(g);
     });
 
@@ -814,12 +1296,12 @@ function renderMindmap(data) {
     redrawEdges = drawLinks;
     drawLinks();
 
-    // Node colors by depth
+    const theme = getCurrentTheme();
     const depthColors = [
-        { fill: "#4f46e5", stroke: "#818cf8", text: "#ffffff" },
-        { fill: "#1e1b4b", stroke: "#6366f1", text: "#c7d2fe" },
-        { fill: "#18181b", stroke: "#3f3f5a", text: "#a1a1aa" },
-        { fill: "#18181b", stroke: "#2a2a3a", text: "#71717a" },
+        buildNodePalette(theme.mindmap.root),
+        buildNodePalette(theme.mindmap.branch),
+        buildNodePalette(theme.mindmap.leaf),
+        buildNodePalette(theme.mindmap.leaf),
     ];
 
     allNodes.forEach((node) => {
@@ -867,6 +1349,7 @@ function renderMindmap(data) {
         };
 
         makeNodeDraggable(svg, g, node.id);
+        attachNodeEditTriggers(g, node.id);
         nodesGroup.appendChild(g);
     });
 
@@ -877,6 +1360,220 @@ function renderMindmap(data) {
 // ═══════════════════════════
 //  TOOLBAR CONTROLS
 // ═══════════════════════════
+
+function getExportedSvgClone() {
+    const svg = document.getElementById("diagram-svg");
+    if (!svg) return null;
+
+    const clone = svg.cloneNode(true);
+    const viewBoxParts = (svg.getAttribute("viewBox") || "0 0 1200 800")
+        .split(/\s+/)
+        .map(Number);
+    const width = Math.max(1, Math.round(viewBoxParts[2] || 1200));
+    const height = Math.max(1, Math.round(viewBoxParts[3] || 800));
+
+    clone.setAttribute("xmlns", SVG_NS);
+    clone.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
+    clone.setAttribute("width", String(width));
+    clone.setAttribute("height", String(height));
+
+    const backgroundRect = createSvgElement("rect", {
+        x: viewBoxParts[0] || 0,
+        y: viewBoxParts[1] || 0,
+        width,
+        height,
+        fill: currentTheme.canvasBg,
+    });
+    clone.insertBefore(backgroundRect, clone.firstChild);
+
+    const styleEl = document.createElementNS(SVG_NS, "style");
+    styleEl.textContent = `text { font-family: Inter, -apple-system, sans-serif; }`;
+    clone.insertBefore(styleEl, clone.firstChild);
+
+    return { clone, width, height };
+}
+
+function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+function exportSvg() {
+    const exported = getExportedSvgClone();
+    if (!exported) {
+        showStatus("error", "No diagram to export.");
+        setTimeout(hideStatus, 2000);
+        return;
+    }
+
+    const serializer = new XMLSerializer();
+    const source = serializer.serializeToString(exported.clone);
+    const blob = new Blob([`<?xml version="1.0" standalone="no"?>\r\n${source}`], {
+        type: "image/svg+xml;charset=utf-8",
+    });
+
+    downloadBlob(blob, `tissue-ai-${sanitizeFileStem(diagramType || "diagram")}.svg`);
+}
+
+function exportPng() {
+    const exported = getExportedSvgClone();
+    if (!exported) {
+        showStatus("error", "No diagram to export.");
+        setTimeout(hideStatus, 2000);
+        return;
+    }
+
+    const serializer = new XMLSerializer();
+    const source = serializer.serializeToString(exported.clone);
+    const blob = new Blob([`<?xml version="1.0" standalone="no"?>\r\n${source}`], {
+        type: "image/svg+xml;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+
+    const image = new Image();
+    image.onload = () => {
+        const scale = 2;
+        const canvas = document.createElement("canvas");
+        canvas.width = exported.width * scale;
+        canvas.height = exported.height * scale;
+        const context = canvas.getContext("2d");
+        context.fillStyle = currentTheme.canvasBg;
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(url);
+        canvas.toBlob((pngBlob) => {
+            if (!pngBlob) return;
+            downloadBlob(pngBlob, `tissue-ai-${sanitizeFileStem(diagramType || "diagram")}.png`);
+        });
+    };
+    image.onerror = () => {
+        URL.revokeObjectURL(url);
+        showStatus("error", "PNG export failed.");
+        setTimeout(hideStatus, 2000);
+    };
+    image.src = url;
+}
+
+function exportPdf() {
+    const exported = getExportedSvgClone();
+    const jsPDF = window.jspdf && window.jspdf.jsPDF;
+    if (!exported || !jsPDF) {
+        showStatus("error", "PDF export is unavailable right now.");
+        setTimeout(hideStatus, 2000);
+        return;
+    }
+
+    const serializer = new XMLSerializer();
+    const source = serializer.serializeToString(exported.clone);
+    const blob = new Blob([`<?xml version="1.0" standalone="no"?>\r\n${source}`], {
+        type: "image/svg+xml;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+
+    const image = new Image();
+    image.onload = () => {
+        const scale = 2;
+        const width = exported.width * scale;
+        const height = exported.height * scale;
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext("2d");
+        context.fillStyle = currentTheme.canvasBg;
+        context.fillRect(0, 0, width, height);
+        context.drawImage(image, 0, 0, width, height);
+        const pngData = canvas.toDataURL("image/png");
+        const pdf = new jsPDF({ orientation: width >= height ? "landscape" : "portrait", unit: "px", format: [width, height] });
+        pdf.addImage(pngData, "PNG", 0, 0, width, height);
+        pdf.save(`tissue-ai-${sanitizeFileStem(diagramType || "diagram")}.pdf`);
+        URL.revokeObjectURL(url);
+    };
+    image.onerror = () => {
+        URL.revokeObjectURL(url);
+        showStatus("error", "PDF export failed.");
+        setTimeout(hideStatus, 2000);
+    };
+    image.src = url;
+}
+
+function handleExport(format) {
+    if (format === "svg") {
+        exportSvg();
+    } else if (format === "png") {
+        exportPng();
+    } else if (format === "pdf") {
+        exportPdf();
+    }
+    if (exportMenuContainer) {
+        exportMenuContainer.classList.remove("open");
+    }
+}
+
+renderThemeOptions();
+applyThemeToPage(currentTheme);
+renderThemeLibrary();
+
+if (btnTheme) {
+    btnTheme.addEventListener("click", openThemeModal);
+}
+
+if (btnThemeClose) {
+    btnThemeClose.addEventListener("click", closeThemeModal);
+}
+
+if (themeModalBackdrop) {
+    themeModalBackdrop.addEventListener("click", (event) => {
+        if (event.target === themeModalBackdrop) {
+            closeThemeModal();
+        }
+    });
+}
+
+document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && themeModalBackdrop && !themeModalBackdrop.hidden) {
+        closeThemeModal();
+    }
+});
+
+if (themeSelect) {
+    themeSelect.addEventListener("change", () => {
+        updateThemeSelection(themeSelect.value);
+    });
+}
+
+[
+    themeCanvasBgInput,
+    themeGridColorInput,
+    themeFlowStartInput,
+    themeFlowProcessInput,
+    themeFlowDecisionInput,
+    themeFlowEndInput,
+    themeMindRootInput,
+    themeMindBranchInput,
+    themeMindLeafInput,
+].forEach((input) => {
+    if (input) {
+        input.addEventListener("input", () => {
+            updateThemeFromInputs();
+        });
+    }
+});
+
+if (btnSaveTheme) {
+    btnSaveTheme.addEventListener("click", saveCurrentTheme);
+}
+
+if (themeNameInput) {
+    themeNameInput.addEventListener("change", () => {
+        currentTheme.name = themeNameInput.value.trim() || currentTheme.name || "Custom Theme";
+    });
+}
 
 btnZoomIn.addEventListener("click", () => {
     const svg = document.getElementById("diagram-svg");
@@ -918,39 +1615,65 @@ btnReset.addEventListener("click", () => {
     );
 });
 
-btnExport.addEventListener("click", () => {
-    const svg = document.getElementById("diagram-svg");
-    if (!svg) {
-        showStatus("error", "No diagram to export.");
-        setTimeout(hideStatus, 2000);
-        return;
-    }
-
-    const clone = svg.cloneNode(true);
-    clone.removeAttribute("style");
-
-    // Inline key styles for export
-    const styleEl = document.createElementNS(SVG_NS, "style");
-    styleEl.textContent = `
-        text { font-family: Inter, -apple-system, sans-serif; }
-    `;
-    clone.insertBefore(styleEl, clone.firstChild);
-
-    const serializer = new XMLSerializer();
-    let source = serializer.serializeToString(clone);
-    source =
-        '<?xml version="1.0" standalone="no"?>\r\n' + source;
-
-    const blob = new Blob([source], {
-        type: "image/svg+xml;charset=utf-8",
+if (btnExport && exportMenuContainer) {
+    btnExport.addEventListener("click", (event) => {
+        event.stopPropagation();
+        exportMenuContainer.classList.toggle("open");
     });
-    const url = URL.createObjectURL(blob);
+}
 
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `tissue-ai-${diagramType || "diagram"}.svg`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+if (exportMenuPanel) {
+    exportMenuPanel.querySelectorAll("[data-export]").forEach((button) => {
+        button.addEventListener("click", () => {
+            handleExport(button.dataset.export);
+        });
+    });
+}
+
+if (btnNodeSave && nodeEditorInput) {
+    btnNodeSave.addEventListener("click", () => {
+        if (editingNodeId === null) return;
+        const nextLabel = nodeEditorInput.value.trim();
+        if (!nextLabel) {
+            showStatus("error", "Node text cannot be empty.");
+            setTimeout(hideStatus, 2000);
+            return;
+        }
+        updateNodeLabel(editingNodeId, nextLabel);
+        closeNodeEditor();
+        renderDiagram();
+    });
+}
+
+if (btnNodeCancel) {
+    btnNodeCancel.addEventListener("click", closeNodeEditor);
+}
+
+if (nodeEditorBackdrop) {
+    nodeEditorBackdrop.addEventListener("click", (event) => {
+        if (event.target === nodeEditorBackdrop) {
+            closeNodeEditor();
+        }
+    });
+}
+
+if (nodeEditorInput && btnNodeSave) {
+    nodeEditorInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+            btnNodeSave.click();
+        } else if (event.key === "Escape") {
+            closeNodeEditor();
+        }
+    });
+}
+
+document.addEventListener("click", (event) => {
+    if (
+        exportMenuContainer &&
+        btnExport &&
+        !exportMenuContainer.contains(event.target) &&
+        event.target !== btnExport
+    ) {
+        exportMenuContainer.classList.remove("open");
+    }
 });

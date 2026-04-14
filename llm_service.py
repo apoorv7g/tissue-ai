@@ -6,59 +6,96 @@ MODEL = "openai/gpt-oss-120b"
 
 
 def build_flowchart_prompt(text: str) -> str:
-    return f"""You are a semantic analysis engine. Read the following unstructured text and extract a flowchart structure from it.
+    return f"""You are a professional flowchart design assistant. Analyze the given text and extract a clear, logical flowchart structure.
 
-Rules:
-- Identify distinct steps, decisions, or stages described in the text.
-- Each node must have a unique "id" (string), a "label" (short description), and a "type" which is one of: "start", "process", "decision", "end".
-- Each edge must have a "from" (source node id), "to" (target node id), and an optional "label" for the connection.
-- Return ONLY valid JSON. No markdown, no explanation.
+Rules for Professional Flowcharts:
+- Start with a single "start" node (represents entry point)
+- End with a single "end" node (represents completion)
+- Use "process" nodes for actions, tasks, or operations
+- Use "decision" nodes only for true yes/no choices (2 outgoing edges: yes/no)
+- Ensure a logical flow from top to bottom with no circular dependencies
+- Keep node labels concise (3-6 words max)
+- Every node must have at least one outgoing edge (except end nodes)
+- Decision nodes must have exactly 2 outgoing edges
+- Use edge labels only for conditional branches (e.g., "Yes", "No")
+- Avoid redundant or self-referencing nodes
 
-Output format:
+Output format (VALID JSON ONLY):
 {{
   "nodes": [
-    {{"id": "1", "label": "Start", "type": "start"}},
-    {{"id": "2", "label": "Do something", "type": "process"}}
+    {{"id": "1", "label": "Start Process", "type": "start"}},
+    {{"id": "2", "label": "Analyze Requirements", "type": "process"}},
+    {{"id": "3", "label": "Requirements Clear?", "type": "decision"}},
+    {{"id": "4", "label": "Execute Action", "type": "process"}},
+    {{"id": "5", "label": "End", "type": "end"}}
   ],
   "edges": [
-    {{"from": "1", "to": "2", "label": ""}}
+    {{"from": "1", "to": "2", "label": ""}},
+    {{"from": "2", "to": "3", "label": ""}},
+    {{"from": "3", "to": "4", "label": "Yes"}},
+    {{"from": "3", "to": "5", "label": "No"}},
+    {{"from": "4", "to": "5", "label": ""}}
   ]
 }}
 
-Text:
+Text to analyze:
 \"\"\"{text}\"\"\"
 
-Return ONLY the JSON object."""
+Return ONLY valid JSON. No markdown, explanations, or code fences."""
 
 
 def build_mindmap_prompt(text: str) -> str:
-    return f"""You are a semantic analysis engine. Read the following unstructured text and extract a mind map structure from it.
+    return f"""You are a professional mind map designer. Extract a hierarchical mind map structure from the given text.
 
-Rules:
-- Identify a central topic and branch out into subtopics and details.
-- Each node must have a unique "id" (string), a "label" (short text), and a "children" array (which can be empty or contain child node objects).
-- The root node represents the central theme.
-- Return ONLY valid JSON. No markdown, no explanation.
+Rules for Professional Mind Maps:
+- Create a central root node representing the main topic (brief, 2-4 words)
+- Branch into 3-6 main categories or themes
+- Each main branch can have 2-4 sub-branches
+- Keep labels concise and descriptive (2-5 words)
+- Maximum depth: 3 levels (root → branch → leaf)
+- No duplicate concepts across branches
+- Ensure logical grouping and hierarchy
+- Avoid circular relationships
+- Total nodes should be between 8 and 25
 
-Output format:
+Output format (VALID JSON ONLY):
 {{
   "root": {{
     "id": "1",
-    "label": "Central Topic",
+    "label": "Project Management",
     "children": [
       {{
         "id": "2",
-        "label": "Subtopic A",
-        "children": []
+        "label": "Planning",
+        "children": [
+          {{"id": "3", "label": "Define Scope", "children": []}},
+          {{"id": "4", "label": "Risk Assessment", "children": []}}
+        ]
+      }},
+      {{
+        "id": "5",
+        "label": "Execution",
+        "children": [
+          {{"id": "6", "label": "Resource Allocation", "children": []}},
+          {{"id": "7", "label": "Timeline Management", "children": []}}
+        ]
+      }},
+      {{
+        "id": "8",
+        "label": "Monitoring",
+        "children": [
+          {{"id": "9", "label": "Track Progress", "children": []}},
+          {{"id": "10", "label": "Quality Check", "children": []}}
+        ]
       }}
     ]
   }}
 }}
 
-Text:
+Text to analyze:
 \"\"\"{text}\"\"\"
 
-Return ONLY the JSON object."""
+Return ONLY valid JSON. No markdown, explanations, or code fences."""
 
 
 async def generate_diagram_json(
@@ -84,7 +121,7 @@ async def generate_diagram_json(
             {"role": "user", "content": prompt},
         ],
         "temperature": 0.3,
-        "max_tokens": 2048,
+        "max_tokens": 4096,
     }
 
     try:
