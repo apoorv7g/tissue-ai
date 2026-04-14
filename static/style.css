@@ -27,6 +27,21 @@
     --success: #22c55e;
     --radius: 12px;
     --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --bg-rgba-80: rgba(10, 10, 15, 0.8);
+    --bg-rgba-35: rgba(10, 10, 15, 0.35);
+    --accent-rgba-10: rgba(99, 102, 241, 0.1);
+    --accent-rgba-40: rgba(99, 102, 241, 0.4);
+    --accent-rgba-30: rgba(99, 102, 241, 0.3);
+    --modal-backdrop-bg: rgba(10, 10, 15, 0.72);
+    --modal-bg: linear-gradient(180deg, rgba(18, 18, 26, 0.98), rgba(12, 12, 17, 0.98));
+    --card-bg: linear-gradient(180deg, rgba(18, 18, 26, 0.9), rgba(12, 12, 16, 0.9));
+    --accent-rgba-25: rgba(99, 102, 241, 0.25);
+    --accent-rgba-35: rgba(99, 102, 241, 0.35);
+    --text-rgba-06: rgba(255, 255, 255, 0.06);
+    --accent-rgba-50: rgba(99, 102, 241, 0.5);
+    --accent-rgba-80: rgba(129, 140, 248, 0.8);
+    --accent-rgba-30-export: rgba(99, 102, 241, 0.3);
+    --accent-rgba-15-export: rgba(99, 102, 241, 0.15);
 }
 
 body {
@@ -51,7 +66,7 @@ header {
     align-items: center;
     justify-content: space-between;
     backdrop-filter: blur(12px);
-    background: rgba(10, 10, 15, 0.8);
+    background: var(--bg-rgba-80);
     position: sticky;
     top: 0;
     z-index: 100;
@@ -134,7 +149,7 @@ header {
     padding: 16px;
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    background: rgba(10, 10, 15, 0.35);
+    background: var(--bg-rgba-35);
     display: flex;
     flex-direction: column;
     gap: 14px;
@@ -143,7 +158,7 @@ header {
 .theme-panel-header {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
 }
 
 .theme-panel-header label {
@@ -152,6 +167,23 @@ header {
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.6px;
+    margin-bottom: 4px;
+}
+
+.theme-panel-header > div {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+}
+
+.theme-panel-header select {
+    flex: 1;
+}
+
+.btn-create-theme {
+    flex: 0.8;
+    font-size: 0.78rem;
+    padding: 10px 12px;
 }
 
 #theme-select {
@@ -180,7 +212,7 @@ header {
 #theme-select:focus {
     outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    box-shadow: 0 0 0 3px var(--accent-rgba-10);
 }
 
 #theme-select option {
@@ -227,7 +259,7 @@ header {
 .color-field input[type="color"]:focus {
     outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    box-shadow: 0 0 0 3px var(--accent-rgba-10);
 }
 
 .theme-save-row {
@@ -256,12 +288,12 @@ header {
 .theme-save-row input:focus {
     outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1), inset 0 1px 2px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0 0 3px var(--accent-rgba-10), inset 0 1px 2px rgba(0, 0, 0, 0.1);
     background: var(--surface-hover);
 }
 
 .theme-save-row input:hover:not(:focus) {
-    border-color: rgba(99, 102, 241, 0.4);
+    border-color: var(--accent-rgba-40);
 }
 
 .btn-secondary,
@@ -296,13 +328,13 @@ header {
 
 .btn-primary {
     background: linear-gradient(135deg, var(--accent), var(--accent-hover));
-    color: #fff;
+    color: var(--text);
     border: none;
 }
 
 .btn-primary:hover {
     transform: translateY(-1px);
-    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+    box-shadow: 0 8px 20px var(--accent-rgba-30);
 }
 
 .btn-primary:active {
@@ -423,21 +455,21 @@ header {
 }
 
 .btn-export-trigger {
-    color: #dbe2ff;
-    border-color: rgba(99, 102, 241, 0.5);
-    background: linear-gradient(180deg, rgba(79, 70, 229, 0.3), rgba(79, 70, 229, 0.15));
+    color: var(--accent-hover);
+    border-color: var(--accent-rgba-50);
+    background: linear-gradient(180deg, var(--accent-rgba-30-export), var(--accent-rgba-15-export));
 }
 
 .btn-export-trigger:hover {
-    border-color: rgba(129, 140, 248, 0.8);
-    color: #ffffff;
+    border-color: var(--accent-rgba-80);
+    color: var(--text);
 }
 
 .theme-modal-backdrop {
     position: fixed;
     inset: 0;
     z-index: 210;
-    background: rgba(3, 3, 8, 0.72);
+    background: var(--modal-backdrop-bg);
     backdrop-filter: blur(8px);
     display: grid;
     place-items: center;
@@ -450,7 +482,7 @@ header {
     overflow: hidden;
     border-radius: 24px;
     border: 1px solid var(--border);
-    background: linear-gradient(180deg, rgba(18, 18, 26, 0.98), rgba(12, 12, 17, 0.98));
+    background: var(--modal-bg);
     box-shadow: 0 30px 90px rgba(0, 0, 0, 0.55);
     display: flex;
     flex-direction: column;
@@ -502,7 +534,7 @@ header {
 .theme-panel {
     border: 1px solid var(--border);
     border-radius: 20px;
-    background: rgba(10, 10, 15, 0.45);
+    background: var(--bg-rgba-35);
     padding: 16px;
 }
 
@@ -537,12 +569,12 @@ header {
     padding: 14px;
     border-radius: 18px;
     border: 1px solid var(--border);
-    background: linear-gradient(180deg, rgba(18, 18, 26, 0.9), rgba(12, 12, 16, 0.9));
+    background: var(--card-bg);
 }
 
 .theme-card.active {
     border-color: var(--accent);
-    box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.25);
+    box-shadow: 0 0 0 1px var(--accent-rgba-25);
 }
 
 .theme-card-top {
@@ -566,7 +598,7 @@ header {
 .theme-card-badge {
     font-size: 0.72rem;
     color: var(--accent-hover);
-    border: 1px solid rgba(129, 140, 248, 0.35);
+    border: 1px solid var(--accent-rgba-35);
     border-radius: 999px;
     padding: 4px 8px;
 }
@@ -580,7 +612,7 @@ header {
 .theme-swatch {
     height: 18px;
     border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--text-rgba-06);
 }
 
 .theme-card-actions {
@@ -687,9 +719,9 @@ header {
     left: 12px;
     z-index: 5;
     font-size: 0.75rem;
-    color: #a5b4fc;
-    background: rgba(30, 27, 75, 0.78);
-    border: 1px solid rgba(99, 102, 241, 0.35);
+    color: var(--accent-hover);
+    border-color: var(--accent-rgba-50);
+    border: 1px solid var(--border);
     border-radius: 999px;
     padding: 6px 10px;
     pointer-events: none;
@@ -763,7 +795,7 @@ header {
 .node-editor-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(3, 3, 8, 0.7);
+    background: var(--modal-backdrop-bg);
     display: grid;
     place-items: center;
     padding: 24px;
@@ -774,7 +806,7 @@ header {
     width: min(420px, 100%);
     border-radius: 20px;
     border: 1px solid var(--border);
-    background: rgba(15, 15, 22, 0.98);
+    background: var(--modal-bg);
     box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
     padding: 22px;
     display: flex;

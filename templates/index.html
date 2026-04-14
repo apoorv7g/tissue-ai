@@ -115,18 +115,60 @@
                 <section class="theme-panel">
                     <div class="theme-panel-header">
                         <label for="theme-select">Active Theme</label>
-                        <select id="theme-select"></select>
+                        <div>
+                            <select id="theme-select"></select>
+                            <button class="btn-secondary btn-create-theme" id="btn-create-theme" type="button">
+                                + Create New
+                            </button>
+                        </div>
                     </div>
 
                     <div class="theme-editor-grid">
+                        <!-- UI Colors -->
                         <div class="color-field">
-                            <label for="theme-canvas-bg">Canvas</label>
+                            <label for="theme-bg">Background</label>
+                            <input type="color" id="theme-bg" />
+                        </div>
+                        <div class="color-field">
+                            <label for="theme-surface">Surface</label>
+                            <input type="color" id="theme-surface" />
+                        </div>
+                        <div class="color-field">
+                            <label for="theme-surface-hover">Surface Hover</label>
+                            <input type="color" id="theme-surface-hover" />
+                        </div>
+                        <div class="color-field">
+                            <label for="theme-text">Text</label>
+                            <input type="color" id="theme-text" />
+                        </div>
+                        <div class="color-field">
+                            <label for="theme-text-muted">Text Muted</label>
+                            <input type="color" id="theme-text-muted" />
+                        </div>
+                        <div class="color-field">
+                            <label for="theme-border">Border</label>
+                            <input type="color" id="theme-border" />
+                        </div>
+                        <div class="color-field">
+                            <label for="theme-accent">Accent</label>
+                            <input type="color" id="theme-accent" />
+                        </div>
+                        <div class="color-field">
+                            <label for="theme-accent-hover">Accent Hover</label>
+                            <input type="color" id="theme-accent-hover" />
+                        </div>
+
+                        <!-- Canvas Colors -->
+                        <div class="color-field">
+                            <label for="theme-canvas-bg">Canvas Background</label>
                             <input type="color" id="theme-canvas-bg" />
                         </div>
                         <div class="color-field">
                             <label for="theme-grid-color">Grid</label>
                             <input type="color" id="theme-grid-color" />
                         </div>
+
+                        <!-- Diagram Colors -->
                         <div class="color-field">
                             <label for="theme-flow-start">Flow Start</label>
                             <input type="color" id="theme-flow-start" />

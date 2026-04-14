@@ -25,8 +25,20 @@ const BASE_THEMES = [
     {
         id: "midnight-aurora",
         name: "Midnight Aurora",
+        // App UI Colors
+        bg: "#0a0a0f",
+        surface: "#12121a",
+        surfaceHover: "#1a1a26",
+        border: "#2a2a3a",
+        borderFocus: "#6366f1",
+        text: "#e4e4e7",
+        textMuted: "#71717a",
+        accent: "#6366f1",
+        accentHover: "#818cf8",
+        // Canvas Colors
         canvasBg: "#0c0c12",
         canvasGrid: "#1a1a2a",
+        // Diagram Colors
         flowchart: {
             start: "#052e16",
             process: "#1e1b4b",
@@ -42,8 +54,20 @@ const BASE_THEMES = [
     {
         id: "ember-ink",
         name: "Ember Ink",
+        // App UI Colors
+        bg: "#0f0b08",
+        surface: "#1a1410",
+        surfaceHover: "#241a13",
+        border: "#3d2f25",
+        borderFocus: "#ea580c",
+        text: "#f5e6d3",
+        textMuted: "#a89080",
+        accent: "#ea580c",
+        accentHover: "#f97316",
+        // Canvas Colors
         canvasBg: "#120f0c",
         canvasGrid: "#2a201a",
+        // Diagram Colors
         flowchart: {
             start: "#7c2d12",
             process: "#78350f",
@@ -59,8 +83,20 @@ const BASE_THEMES = [
     {
         id: "light-clarity",
         name: "Light Clarity",
+        // App UI Colors
+        bg: "#f9fafb",
+        surface: "#f3f4f6",
+        surfaceHover: "#e5e7eb",
+        border: "#d1d5db",
+        borderFocus: "#3b82f6",
+        text: "#1f2937",
+        textMuted: "#6b7280",
+        accent: "#3b82f6",
+        accentHover: "#2563eb",
+        // Canvas Colors
         canvasBg: "#f8f9fc",
         canvasGrid: "#e5e7eb",
+        // Diagram Colors
         flowchart: {
             start: "#10b981",
             process: "#3b82f6",
@@ -76,8 +112,20 @@ const BASE_THEMES = [
     {
         id: "dark-slate",
         name: "Dark Slate",
+        // App UI Colors
+        bg: "#0f172a",
+        surface: "#1e293b",
+        surfaceHover: "#334155",
+        border: "#475569",
+        borderFocus: "#6366f1",
+        text: "#e2e8f0",
+        textMuted: "#94a3b8",
+        accent: "#6366f1",
+        accentHover: "#818cf8",
+        // Canvas Colors
         canvasBg: "#1a1f2e",
         canvasGrid: "#2d3748",
+        // Diagram Colors
         flowchart: {
             start: "#34d399",
             process: "#60a5fa",
@@ -102,8 +150,20 @@ const themeLibraryList = document.getElementById("theme-library-list");
 const themeSelect = document.getElementById("theme-select");
 const themeNameInput = document.getElementById("theme-name");
 const btnSaveTheme = document.getElementById("btn-save-theme");
+const btnCreateTheme = document.getElementById("btn-create-theme");
+// UI Color Inputs
+const themeBgInput = document.getElementById("theme-bg");
+const themeSurfaceInput = document.getElementById("theme-surface");
+const themeSurfaceHoverInput = document.getElementById("theme-surface-hover");
+const themeTextInput = document.getElementById("theme-text");
+const themeTextMutedInput = document.getElementById("theme-text-muted");
+const themeBorderInput = document.getElementById("theme-border");
+const themeAccentInput = document.getElementById("theme-accent");
+const themeAccentHoverInput = document.getElementById("theme-accent-hover");
+// Canvas Color Inputs
 const themeCanvasBgInput = document.getElementById("theme-canvas-bg");
 const themeGridColorInput = document.getElementById("theme-grid-color");
+// Diagram Color Inputs
 const themeFlowStartInput = document.getElementById("theme-flow-start");
 const themeFlowProcessInput = document.getElementById("theme-flow-process");
 const themeFlowDecisionInput = document.getElementById("theme-flow-decision");
@@ -252,6 +312,10 @@ function getSavedThemeById(id) {
     return themeState.savedThemes.find((theme) => theme.id === id);
 }
 
+function isBuiltInTheme(themeId) {
+    return BASE_THEMES.some((theme) => theme.id === themeId);
+}
+
 function cloneTheme(theme) {
     return JSON.parse(JSON.stringify(theme));
 }
@@ -260,8 +324,19 @@ function themeFromControls(name = "Custom Theme") {
     return {
         id: `custom-${Date.now()}`,
         name,
+        // UI Colors
+        bg: themeBgInput.value,
+        surface: themeSurfaceInput.value,
+        surfaceHover: themeSurfaceHoverInput.value,
+        text: themeTextInput.value,
+        textMuted: themeTextMutedInput.value,
+        border: themeBorderInput.value,
+        accent: themeAccentInput.value,
+        accentHover: themeAccentHoverInput.value,
+        // Canvas Colors
         canvasBg: themeCanvasBgInput.value,
         canvasGrid: themeGridColorInput.value,
+        // Diagram Colors
         flowchart: {
             start: themeFlowStartInput.value,
             process: themeFlowProcessInput.value,
@@ -277,8 +352,19 @@ function themeFromControls(name = "Custom Theme") {
 }
 
 function applyThemeToControls(theme) {
+    // UI Color Inputs
+    if (themeBgInput) themeBgInput.value = theme.bg;
+    if (themeSurfaceInput) themeSurfaceInput.value = theme.surface;
+    if (themeSurfaceHoverInput) themeSurfaceHoverInput.value = theme.surfaceHover;
+    if (themeTextInput) themeTextInput.value = theme.text;
+    if (themeTextMutedInput) themeTextMutedInput.value = theme.textMuted;
+    if (themeBorderInput) themeBorderInput.value = theme.border;
+    if (themeAccentInput) themeAccentInput.value = theme.accent;
+    if (themeAccentHoverInput) themeAccentHoverInput.value = theme.accentHover;
+    // Canvas Color Inputs
     themeCanvasBgInput.value = theme.canvasBg;
     themeGridColorInput.value = theme.canvasGrid;
+    // Diagram Color Inputs
     themeFlowStartInput.value = theme.flowchart.start;
     themeFlowProcessInput.value = theme.flowchart.process;
     themeFlowDecisionInput.value = theme.flowchart.decision;
@@ -286,12 +372,81 @@ function applyThemeToControls(theme) {
     themeMindRootInput.value = theme.mindmap.root;
     themeMindBranchInput.value = theme.mindmap.branch;
     themeMindLeafInput.value = theme.mindmap.leaf;
+    
+    // Disable inputs if this is a built-in theme
+    const isBuiltIn = isBuiltInTheme(theme.id);
+    const colorInputs = [
+        themeBgInput,
+        themeSurfaceInput,
+        themeSurfaceHoverInput,
+        themeTextInput,
+        themeTextMutedInput,
+        themeBorderInput,
+        themeAccentInput,
+        themeAccentHoverInput,
+        themeCanvasBgInput,
+        themeGridColorInput,
+        themeFlowStartInput,
+        themeFlowProcessInput,
+        themeFlowDecisionInput,
+        themeFlowEndInput,
+        themeMindRootInput,
+        themeMindBranchInput,
+        themeMindLeafInput,
+        themeNameInput
+    ];
+    colorInputs.forEach(input => {
+        if (input) input.disabled = isBuiltIn;
+    });
+    
+    if (btnSaveTheme) {
+        btnSaveTheme.disabled = isBuiltIn;
+        btnSaveTheme.style.opacity = isBuiltIn ? '0.5' : '1';
+        btnSaveTheme.style.cursor = isBuiltIn ? 'not-allowed' : 'pointer';
+    }
 }
 
 function applyThemeToPage(theme) {
     currentTheme = cloneTheme(theme);
+    // Apply UI Colors
+    document.documentElement.style.setProperty("--bg", theme.bg);
+    document.documentElement.style.setProperty("--surface", theme.surface);
+    document.documentElement.style.setProperty("--surface-hover", theme.surfaceHover);
+    document.documentElement.style.setProperty("--border", theme.border);
+    document.documentElement.style.setProperty("--text", theme.text);
+    document.documentElement.style.setProperty("--text-muted", theme.textMuted);
+    document.documentElement.style.setProperty("--accent", theme.accent);
+    document.documentElement.style.setProperty("--accent-hover", theme.accentHover);
+    // Apply Canvas Colors
     document.documentElement.style.setProperty("--canvas-bg", theme.canvasBg);
     document.documentElement.style.setProperty("--canvas-grid", theme.canvasGrid);
+    
+    // Update rgba variants dynamically based on theme
+    const bgRgb = hexToRgb(theme.bg);
+    const accentRgb = hexToRgb(theme.accent);
+    document.documentElement.style.setProperty("--bg-rgba-80", `rgba(${bgRgb.r}, ${bgRgb.g}, ${bgRgb.b}, 0.8)`);
+    document.documentElement.style.setProperty("--bg-rgba-35", `rgba(${bgRgb.r}, ${bgRgb.g}, ${bgRgb.b}, 0.35)`);
+    document.documentElement.style.setProperty("--accent-rgba-10", `rgba(${accentRgb.r}, ${accentRgb.g}, ${accentRgb.b}, 0.1)`);
+    document.documentElement.style.setProperty("--accent-rgba-40", `rgba(${accentRgb.r}, ${accentRgb.g}, ${accentRgb.b}, 0.4)`);
+    document.documentElement.style.setProperty("--accent-rgba-30", `rgba(${accentRgb.r}, ${accentRgb.g}, ${accentRgb.b}, 0.3)`);
+    document.documentElement.style.setProperty("--accent-rgba-50", `rgba(${accentRgb.r}, ${accentRgb.g}, ${accentRgb.b}, 0.5)`);
+    document.documentElement.style.setProperty("--accent-rgba-80", `rgba(${accentRgb.r}, ${accentRgb.g}, ${accentRgb.b}, 0.8)`);
+    document.documentElement.style.setProperty("--accent-rgba-30-export", `rgba(${accentRgb.r}, ${accentRgb.g}, ${accentRgb.b}, 0.3)`);
+    document.documentElement.style.setProperty("--accent-rgba-15-export", `rgba(${accentRgb.r}, ${accentRgb.g}, ${accentRgb.b}, 0.15)`);
+    
+    // Update modal backgrounds with theme colors
+    const surfaceRgb = hexToRgb(theme.surface);
+    document.documentElement.style.setProperty("--modal-backdrop-bg", `rgba(${bgRgb.r}, ${bgRgb.g}, ${bgRgb.b}, 0.72)`);
+    document.documentElement.style.setProperty("--modal-bg", `linear-gradient(180deg, rgba(${surfaceRgb.r}, ${surfaceRgb.g}, ${surfaceRgb.b}, 0.98), rgba(${bgRgb.r}, ${bgRgb.g}, ${bgRgb.b}, 0.98))`);
+    
+    // Update card backgrounds with theme colors
+    const cardLight = bgRgb;
+    const cardDark = hexToRgb(theme.bg);
+    document.documentElement.style.setProperty("--card-bg", `linear-gradient(180deg, rgba(${surfaceRgb.r}, ${surfaceRgb.g}, ${surfaceRgb.b}, 0.9), rgba(${cardDark.r}, ${cardDark.g}, ${cardDark.b}, 0.9))`);
+    
+    // Update accent rgba variants for card badges
+    document.documentElement.style.setProperty("--accent-rgba-25", `rgba(${accentRgb.r}, ${accentRgb.g}, ${accentRgb.b}, 0.25)`);
+    document.documentElement.style.setProperty("--accent-rgba-35", `rgba(${accentRgb.r}, ${accentRgb.g}, ${accentRgb.b}, 0.35)`);
 
     if (themeSelect) {
         themeSelect.value = theme.id;
@@ -302,6 +457,11 @@ function applyThemeToPage(theme) {
     }
 
     applyThemeToControls(theme);
+    
+    // Trigger full page re-render to ensure entire UI updates
+    if (diagramData) {
+        renderDiagram();
+    }
 }
 
 function renderThemeOptions() {
@@ -337,6 +497,7 @@ function renderThemeLibrary() {
                 .join("");
 
             const isSaved = Boolean(getSavedThemeById(theme.id));
+            const isBuiltIn = isBuiltInTheme(theme.id);
             const isActive = theme.id === themeState.activeThemeId;
 
             return `
@@ -350,7 +511,7 @@ function renderThemeLibrary() {
                     </div>
                     <div class="theme-swatches">${swatches}</div>
                     <div class="theme-card-actions">
-                        <button class="btn-secondary" data-theme-apply="${theme.id}" type="button">Apply</button>
+                        ${!isBuiltIn ? `<button class="btn-secondary" data-theme-apply="${theme.id}" type="button">Apply</button>` : ""}
                         ${isSaved ? `<button class="btn-secondary" data-theme-delete="${theme.id}" type="button">Delete</button>` : ""}
                     </div>
                 </article>
@@ -396,20 +557,35 @@ function updateThemeSelection(themeId) {
     persistThemes();
     applyThemeToPage(theme);
     renderThemeLibrary();
-    if (diagramData) {
-        renderDiagram();
-    }
 }
 
 function saveCurrentTheme() {
+    // Prevent saving if current theme is a built-in theme
+    if (isBuiltInTheme(currentTheme.id)) {
+        showStatus("error", "Cannot modify built-in themes. Select or create a custom theme to save.");
+        setTimeout(hideStatus, 3000);
+        return;
+    }
+    
     const themeName = themeNameInput.value.trim() || "Custom Theme";
     const existingSavedTheme = getSavedThemeById(currentTheme.id);
     const themeId = existingSavedTheme ? currentTheme.id : `custom-${Date.now()}`;
     const theme = {
         id: themeId,
         name: themeName,
+        // UI Colors
+        bg: themeBgInput.value,
+        surface: themeSurfaceInput.value,
+        surfaceHover: themeSurfaceHoverInput.value,
+        text: themeTextInput.value,
+        textMuted: themeTextMutedInput.value,
+        border: themeBorderInput.value,
+        accent: themeAccentInput.value,
+        accentHover: themeAccentHoverInput.value,
+        // Canvas Colors
         canvasBg: themeCanvasBgInput.value,
         canvasGrid: themeGridColorInput.value,
+        // Diagram Colors
         flowchart: {
             start: themeFlowStartInput.value,
             process: themeFlowProcessInput.value,
@@ -432,15 +608,51 @@ function saveCurrentTheme() {
     renderThemeLibrary();
     applyThemeToPage(theme);
     themeNameInput.value = theme.name;
-    if (diagramData) {
-        renderDiagram();
-    }
+    showStatus("success", "Theme saved successfully.");
+    setTimeout(hideStatus, 2000);
+}
+
+function createNewTheme() {
+    // Create a copy of the current theme with a new ID
+    const newTheme = {
+        ...cloneTheme(currentTheme),
+        id: `custom-${Date.now()}`,
+        name: "New Theme",
+    };
+    
+    // If the current theme is built-in, we'll still create a custom copy
+    // Otherwise, we might be creating a variant of an existing custom theme
+    
+    // Add to saved themes
+    themeState.savedThemes.push(newTheme);
+    themeState.activeThemeId = newTheme.id;
+    persistThemes();
+    
+    // Apply the new theme and update UI
+    applyThemeToPage(newTheme);
+    renderThemeOptions();
+    renderThemeLibrary();
+    
+    // Show success message
+    showStatus("success", "New theme created! Customize and save it.");
+    setTimeout(hideStatus, 3000);
 }
 
 function updateThemeFromInputs() {
     currentTheme.name = themeNameInput.value.trim() || currentTheme.name || "Custom Theme";
+    // UI Colors
+    currentTheme.bg = themeBgInput.value;
+    currentTheme.surface = themeSurfaceInput.value;
+    currentTheme.surfaceHover = themeSurfaceHoverInput.value;
+    currentTheme.text = themeTextInput.value;
+    currentTheme.textMuted = themeTextMutedInput.value;
+    currentTheme.border = themeBorderInput.value;
+    currentTheme.accent = themeAccentInput.value;
+    currentTheme.accentHover = themeAccentHoverInput.value;
+    // Canvas Colors
     currentTheme.canvasBg = themeCanvasBgInput.value;
     currentTheme.canvasGrid = themeGridColorInput.value;
+    // Diagram Colors
     currentTheme.flowchart = {
         start: themeFlowStartInput.value,
         process: themeFlowProcessInput.value,
@@ -452,6 +664,16 @@ function updateThemeFromInputs() {
         branch: themeMindBranchInput.value,
         leaf: themeMindLeafInput.value,
     };
+    // Apply UI Colors
+    document.documentElement.style.setProperty("--bg", currentTheme.bg);
+    document.documentElement.style.setProperty("--surface", currentTheme.surface);
+    document.documentElement.style.setProperty("--surface-hover", currentTheme.surfaceHover);
+    document.documentElement.style.setProperty("--text", currentTheme.text);
+    document.documentElement.style.setProperty("--text-muted", currentTheme.textMuted);
+    document.documentElement.style.setProperty("--border", currentTheme.border);
+    document.documentElement.style.setProperty("--accent", currentTheme.accent);
+    document.documentElement.style.setProperty("--accent-hover", currentTheme.accentHover);
+    // Apply Canvas Colors
     document.documentElement.style.setProperty("--canvas-bg", currentTheme.canvasBg);
     document.documentElement.style.setProperty("--canvas-grid", currentTheme.canvasGrid);
     if (diagramData) {
@@ -923,7 +1145,7 @@ function renderFlowchart(data) {
     marker.appendChild(
         createSvgElement("polygon", {
             points: "0 0, 12 4, 0 8",
-            fill: "#6366f1",
+            fill: currentTheme.mindmap.root,
         })
     );
     defs.appendChild(marker);
@@ -1007,7 +1229,7 @@ function renderFlowchart(data) {
             const path = createSvgElement("path", {
                 d,
                 fill: "none",
-                stroke: "#4f46e5",
+                stroke: currentTheme.mindmap.branch,
                 "stroke-width": "2",
                 "marker-end": "url(#arrowhead)",
                 opacity: "0.6",
@@ -1021,7 +1243,7 @@ function renderFlowchart(data) {
                     width: measureText(edge.label, 10) + 12,
                     height: 18,
                     rx: "4",
-                    fill: "#1e1b4b",
+                    fill: currentTheme.surface,
                     opacity: "0.9",
                 });
                 edgesGroup.appendChild(bg);
@@ -1029,7 +1251,7 @@ function renderFlowchart(data) {
                 const lbl = createSvgElement("text", {
                     x: mx,
                     y: my - 5,
-                    fill: "#a5b4fc",
+                    fill: currentTheme.text,
                     "font-size": "10",
                     "font-family": "Inter, sans-serif",
                     "text-anchor": "middle",
@@ -1284,7 +1506,7 @@ function renderMindmap(data) {
             const path = createSvgElement("path", {
                 d: `M ${from.x} ${from.y} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${to.x} ${to.y}`,
                 fill: "none",
-                stroke: "#3730a3",
+                stroke: currentTheme.mindmap.leaf,
                 "stroke-width": "2.5",
                 opacity: "0.45",
                 "stroke-linecap": "round",
@@ -1548,8 +1770,19 @@ if (themeSelect) {
 }
 
 [
+    // UI Color Inputs
+    themeBgInput,
+    themeSurfaceInput,
+    themeSurfaceHoverInput,
+    themeTextInput,
+    themeTextMutedInput,
+    themeBorderInput,
+    themeAccentInput,
+    themeAccentHoverInput,
+    // Canvas Color Inputs
     themeCanvasBgInput,
     themeGridColorInput,
+    // Diagram Color Inputs
     themeFlowStartInput,
     themeFlowProcessInput,
     themeFlowDecisionInput,
@@ -1567,6 +1800,10 @@ if (themeSelect) {
 
 if (btnSaveTheme) {
     btnSaveTheme.addEventListener("click", saveCurrentTheme);
+}
+
+if (btnCreateTheme) {
+    btnCreateTheme.addEventListener("click", createNewTheme);
 }
 
 if (themeNameInput) {
