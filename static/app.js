@@ -192,6 +192,7 @@ const btnGenerate = document.getElementById("btn-generate");
 const btnZoomIn = document.getElementById("btn-zoom-in");
 const btnZoomOut = document.getElementById("btn-zoom-out");
 const btnReset = document.getElementById("btn-reset");
+const btnAutoAlign = document.getElementById("btn-auto-align");
 // const btnExport = document.getElementById("btn-export");
 const canvasArea = document.getElementById("canvas-area");
 const placeholder = document.getElementById("placeholder");
@@ -1108,24 +1109,81 @@ function computeFlowchartLayout(data) {
         nodeSizes[n.id] = { w, h: nodeH };
     });
 
-    // Position
-    const gapX = 70;
-    const gapY = 90;
+    // Analyze diagram complexity
+    const totalConnections = edges.length;
+    const connectionDensity = {};
+    nodes.forEach((n) => {
+        connectionDensity[n.id] = (outgoing[n.id]?.length || 0) + (incoming[n.id]?.length || 0);
+    });
+
+    // Adaptive spacing parameters
+    let baseGapX = 120;
+    let baseGapY = 160;
+    let radialSpacing = 1.3;
+    
+    if (totalConnections > nodes.length * 2.5) {
+        baseGapX = 160;
+        baseGapY = 180;
+        radialSpacing = 1.5;
+    } else if (totalConnections > nodes.length * 1.5) {
+        baseGapX = 140;
+        baseGapY = 170;
+        radialSpacing = 1.4;
+    }
+
+    // Improved 2D positioning with radial distribution
+    const gapX = baseGapX;
+    const gapY = baseGapY;
     const positions = {};
+
+    // Center starting point
+    let centerY = 0;
 
     for (let l = 0; l <= maxLayer; l++) {
         const group = layerGroups[l] || [];
+        const nodeCount = group.length;
+        
+        if (nodeCount === 0) continue;
+
+        // Calculate optimal width
         const totalW =
             group.reduce((s, n) => s + nodeSizes[n.id].w, 0) +
-            Math.max(0, group.length - 1) * gapX;
-        let startX = -totalW / 2;
+            Math.max(0, nodeCount - 1) * gapX;
 
-        group.forEach((n) => {
+        // For layers with 1 node, center it
+        // For layers with 2+ nodes, distribute across width
+        const layerWidth = totalW;
+        let startX = -layerWidth / 2;
+
+        // Calculate layer Y position
+        const layerY = l * gapY;
+
+        // Add horizontal offset variation for better spacing
+        const angleOffsetBase = (Math.PI * 2) / Math.max(1, maxLayer + 1);
+        const layerAngleVariation = Math.sin(l * angleOffsetBase) * 40;
+
+        group.forEach((n, idx) => {
             const sz = nodeSizes[n.id];
+            
+            // Base X position
+            let x = startX + sz.w / 2;
+            
+            // Add radial offset for side positioning
+            const normalizedIdx = (idx - (nodeCount - 1) / 2) / Math.max(1, nodeCount);
+            const radialOffset = normalizedIdx * Math.min(150, gapX * nodeCount / 2);
+            
+            // Add sine wave variation for dynamic spacing
+            const sineVariation = Math.sin(idx * Math.PI / Math.max(1, nodeCount - 1)) * 30;
+            
+            // Calculate connection-based offset
+            const connections = connectionDensity[n.id];
+            const connectionOffset = connections > 2 ? 35 : connections > 1 ? 15 : 0;
+            
             positions[n.id] = {
-                x: startX + sz.w / 2,
-                y: l * (nodeH + gapY),
+                x: x + radialOffset + sineVariation,
+                y: layerY + layerAngleVariation + connectionOffset,
             };
+            
             startX += sz.w + gapX;
         });
     }
@@ -1424,6 +1482,14 @@ function computeMindmapLayout(root) {
 
     computeSizes(root, 0);
 
+    // Count total nodes for adaptive spacing
+    let totalNodes = 0;
+    function countNodes(node) {
+        totalNodes++;
+        (node.children || []).forEach((c) => countNodes(c));
+    }
+    countNodes(root);
+
     function layout(node, x, y, angleStart, angleEnd, depth) {
         node._x = x;
         node._y = y;
@@ -1433,8 +1499,13 @@ function computeMindmapLayout(root) {
         const children = node.children || [];
         if (children.length === 0) return;
 
-        const baseRadius = 200;
-        const radius = baseRadius + depth * 60;
+        // Adaptive radius based on diagram complexity
+        // More nodes = more spacing
+        const baseRadiusAdaptive = 280 + (totalNodes > 20 ? 100 : totalNodes > 10 ? 50 : 0);
+        const depthRadiusMultiplier = 120 + (totalNodes > 20 ? 30 : 0);
+        
+        const baseRadius = baseRadiusAdaptive;
+        const radius = baseRadius + depth * depthRadiusMultiplier;
         const angleSpan = angleEnd - angleStart;
         const childAngle = angleSpan / children.length;
 
@@ -1702,7 +1773,7 @@ function exportPng() {
 
     const image = new Image();
     image.onload = () => {
-        const scale = 2;
+        const scale = 1.5;
         const canvas = document.createElement("canvas");
         canvas.width = exported.width * scale;
         canvas.height = exported.height * scale;
@@ -1742,7 +1813,7 @@ function exportPdf() {
 
     const image = new Image();
     image.onload = () => {
-        const scale = 2;
+        const scale = 1.5;
         const width = exported.width * scale;
         const height = exported.height * scale;
         const canvas = document.createElement("canvas");
@@ -1752,9 +1823,22 @@ function exportPdf() {
         context.fillStyle = currentTheme.canvasBg;
         context.fillRect(0, 0, width, height);
         context.drawImage(image, 0, 0, width, height);
-        const pngData = canvas.toDataURL("image/png");
-        const pdf = new jsPDF({ orientation: width >= height ? "landscape" : "portrait", unit: "px", format: [width, height] });
-        pdf.addImage(pngData, "PNG", 0, 0, width, height);
+        
+        // Convert to PNG with reduced quality for smaller file size
+        const pngData = canvas.toDataURL("image/png", 0.85);
+        
+        // Calculate PDF size in millimeters (convert from pixels: 1px ≈ 0.264mm)
+        const mmWidth = width * 0.264;
+        const mmHeight = height * 0.264;
+        
+        // Create PDF with calculated dimensions
+        const pdf = new jsPDF({ 
+            orientation: width >= height ? "landscape" : "portrait", 
+            unit: "mm", 
+            format: [mmWidth, mmHeight] 
+        });
+        
+        pdf.addImage(pngData, "PNG", 0, 0, mmWidth, mmHeight);
         pdf.save(`tissue-ai-${sanitizeFileStem(diagramType || "diagram")}.pdf`);
         URL.revokeObjectURL(url);
     };
@@ -1914,13 +1998,43 @@ btnZoomOut.addEventListener("click", () => {
 });
 
 btnReset.addEventListener("click", () => {
+    // Clear diagram data and state
+    diagramData = null;
+    diagramType = null;
+    nodePositions = {};
+    nodeElements = {};
+    nodeSizesGlobal = {};
+    
+    // Clear input textarea
+    const inputText = document.getElementById("input-text");
+    if (inputText) inputText.value = "";
+    
+    // Clear status bar
+    hideStatus();
+    
+    // Clear canvas - remove SVG and show placeholder
     const svg = document.getElementById("diagram-svg");
-    if (!svg) return;
+    if (svg) svg.remove();
+    
+    // Show placeholder
+    if (placeholder) placeholder.style.display = "flex";
+    
+    // Reset view
     viewBox = { ...initialViewBox };
-    svg.setAttribute(
-        "viewBox",
-        `${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`
-    );
+});
+
+btnAutoAlign.addEventListener("click", () => {
+    if (!diagramData) {
+        showStatus("error", "No diagram to align.");
+        setTimeout(hideStatus, 2000);
+        return;
+    }
+    
+    showStatus("loading", "Auto-aligning diagram...");
+    // Force re-render with fresh layout computation
+    renderDiagram();
+    showStatus("success", "Diagram aligned.");
+    setTimeout(hideStatus, 2000);
 });
 
 if (btnExport && exportMenuContainer) {

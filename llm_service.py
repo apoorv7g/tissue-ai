@@ -13,75 +13,153 @@ API_ENDPOINTS = {
     # "openai": "https://api.openai.com/v1/chat/completions",
 }
 
+# JSON Schema for Flowchart structured outputs
+FLOWCHART_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "nodes": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "string"},
+                    "label": {"type": "string"},
+                    "type": {"type": "string", "enum": ["start", "process", "decision", "end"]}
+                },
+                "required": ["id", "label", "type"],
+                "additionalProperties": False
+            }
+        },
+        "edges": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "from": {"type": "string"},
+                    "to": {"type": "string"},
+                    "label": {"type": "string"}
+                },
+                "required": ["from", "to", "label"],
+                "additionalProperties": False
+            }
+        }
+    },
+    "required": ["nodes", "edges"],
+    "additionalProperties": False
+}
+
+# JSON Schema for Mindmap structured outputs (with recursive children)
+MINDMAP_NODE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "id": {"type": "string"},
+        "label": {"type": "string"},
+        "children": {
+            "type": "array",
+            "items": {"$ref": "#/$defs/node"}
+        }
+    },
+    "required": ["id", "label", "children"],
+    "additionalProperties": False
+}
+
+MINDMAP_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "root": MINDMAP_NODE_SCHEMA
+    },
+    "required": ["root"],
+    "additionalProperties": False,
+    "$defs": {
+        "node": MINDMAP_NODE_SCHEMA
+    }
+}
+
 
 def build_flowchart_prompt(text: str, complexity: str = "brief") -> str:
     if complexity == "simple":
-        return f"""Create a 3-5 node flowchart with just start, basic process, and end. Minimal nodes.
+        return f"""You MUST return ONLY valid JSON. No text, no markdown, no explanations, no code blocks.
 
-JSON: {{"nodes":[{{"id":"1","label":"Start","type":"start"}},...],"edges":[{{"from":"1","to":"2","label":""}},...]}}"
+Create a simple JSON flowchart with 3-5 nodes: start, basic process, and end. Minimal.
 
-Text: {text}
+Format: {{"nodes":[{{"id":"1","label":"Start","type":"start"}},{{"id":"2","label":"Process","type":"process"}},{{"id":"3","label":"End","type":"end"}}],"edges":[{{"from":"1","to":"2","label":""}},{{"from":"2","to":"3","label":""}}]}}
 
-Return ONLY JSON."""
+IMPORTANT: Return ONLY the JSON object above. No markdown. No extra text.
+
+Text: {text}"""
     elif complexity == "detailed":
-        return f"""Create a flowchart with 8-12 nodes including start, processes, decisions, and end. More depth.
+        return f"""You MUST return ONLY valid JSON. No text, no markdown, no explanations, no code blocks.
 
-JSON: {{"nodes":[{{"id":"1","label":"Start","type":"start"}},...],"edges":[{{"from":"1","to":"2","label":""}},...]}}"
+Create a detailed JSON flowchart with 8-12 nodes including start, processes, decisions, and end. More depth.
 
-Text: {text}
+Format: {{"nodes":[{{"id":"1","label":"Start","type":"start"}},{{"id":"2","label":"Process","type":"process"}},{{"id":"3","label":"Decision","type":"decision"}},{{"id":"4","label":"End","type":"end"}}],"edges":[{{"from":"1","to":"2","label":""}},{{"from":"2","to":"3","label":""}}]}}
 
-Return ONLY JSON."""
+IMPORTANT: Return ONLY the JSON object above. No markdown. No extra text.
+
+Text: {text}"""
     elif complexity == "extensive":
-        return f"""Create a comprehensive flowchart with 15+ nodes including start, multiple processes, decisions, loops, and end.
+        return f"""You MUST return ONLY valid JSON. No text, no markdown, no explanations, no code blocks.
 
-JSON: {{"nodes":[{{"id":"1","label":"Start","type":"start"}},...],"edges":[{{"from":"1","to":"2","label":""}},...]}}"
+Create a comprehensive JSON flowchart with 15+ nodes including start, multiple processes, decisions, loops, and end. Very detailed.
 
-Text: {text}
+Format: {{"nodes":[{{"id":"1","label":"Start","type":"start"}},{{"id":"2","label":"Process","type":"process"}},{{"id":"3","label":"Decision","type":"decision"}},{{"id":"4","label":"End","type":"end"}}],"edges":[{{"from":"1","to":"2","label":""}},{{"from":"2","to":"3","label":""}},{{"from":"3","to":"2","label":"Loop"}}]}}
 
-Return ONLY JSON."""
+IMPORTANT: Return ONLY the JSON object above. No markdown. No extra text. ONLY JSON.
+
+Text: {text}"""
     else:  # brief (default)
-        return f"""Create a flowchart with 5-8 nodes: start, 2-3 processes/decisions, and end. Concise.
+        return f"""You MUST return ONLY valid JSON. No text, no markdown, no explanations, no code blocks.
 
-JSON: {{"nodes":[{{"id":"1","label":"Start","type":"start"}},...],"edges":[{{"from":"1","to":"2","label":""}},...]}}"
+Create a balanced JSON flowchart with 5-8 nodes: start, 2-3 processes/decisions, and end. Concise.
 
-Text: {text}
+Format: {{"nodes":[{{"id":"1","label":"Start","type":"start"}},{{"id":"2","label":"Process","type":"process"}},{{"id":"3","label":"End","type":"end"}}],"edges":[{{"from":"1","to":"2","label":""}},{{"from":"2","to":"3","label":""}}]}}
 
-Return ONLY JSON."""
+IMPORTANT: Return ONLY the JSON object above. No markdown. No extra text.
+
+Text: {text}"""
 
 
 def build_mindmap_prompt(text: str, complexity: str = "brief") -> str:
     if complexity == "simple":
-        return f"""Create a mind map with root and 2-3 main branches. Simple and minimal.
+        return f"""You MUST return ONLY valid JSON. No text, no markdown, no explanations, no code blocks.
 
-JSON: {{"root":{{"id":"1","label":"Topic","children":[{{"id":"2","label":"Branch","children":[]}},...]}}}}"
+Create a JSON mind map with root and 2-3 main branches. Simple.
 
-Text: {text}
+Format: {{"root":{{"id":"1","label":"RootLabel","children":[{{"id":"2","label":"Branch1","children":[]}},{{"id":"3","label":"Branch2","children":[]}}]}}}}
 
-Return ONLY JSON."""
+IMPORTANT: Return ONLY the JSON object above. No markdown. No extra text.
+
+Text: {text}"""
     elif complexity == "detailed":
-        return f"""Create a mind map with root, 5-7 main branches, each with 2-3 sub-branches. Rich detail.
+        return f"""You MUST return ONLY valid JSON. No text, no markdown, no explanations, no code blocks.
 
-JSON: {{"root":{{"id":"1","label":"Topic","children":[{{"id":"2","label":"Branch","children":[]}},...]}}}}"
+Create a JSON mind map with root, 5-7 main branches, each with 2-3 sub-branches.
 
-Text: {text}
+Format: {{"root":{{"id":"1","label":"RootLabel","children":[{{"id":"2","label":"Branch1","children":[{{"id":"3","label":"SubBranch","children":[]}}]}},{{"id":"4","label":"Branch2","children":[]}}]}}}}
 
-Return ONLY JSON."""
+IMPORTANT: Return ONLY the JSON object above. No markdown. No extra text.
+
+Text: {text}"""
     elif complexity == "extensive":
-        return f"""Create a comprehensive mind map with root, 8+ main branches, many sub-branches, 3 levels deep. Very detailed.
+        return f"""You MUST return ONLY valid JSON. No text, no markdown, no explanations, no code blocks. NO MARKDOWN TABLES.
 
-JSON: {{"root":{{"id":"1","label":"Topic","children":[{{"id":"2","label":"Branch","children":[]}},...]}}}}"
+Create a comprehensive JSON mind map with root, 8+ main branches, many sub-branches (2-3 per branch), reaching 3 levels deep.
 
-Text: {text}
+Format: {{"root":{{"id":"1","label":"RootLabel","children":[{{"id":"2","label":"Branch1","children":[{{"id":"3","label":"SubBranch1","children":[{{"id":"4","label":"SubSubBranch","children":[]}}]}},{{"id":"5","label":"SubBranch2","children":[]}}]}},{{"id":"6","label":"Branch2","children":[]}}]}}}}
 
-Return ONLY JSON."""
+IMPORTANT: Return ONLY the JSON object above. No markdown. No tables. No text. ONLY JSON.
+
+Text: {text}"""
     else:  # brief (default)
-        return f"""Create a mind map with root and 3-5 main branches (max 2 levels). Balanced.
+        return f"""You MUST return ONLY valid JSON. No text, no markdown, no explanations, no code blocks.
 
-JSON: {{"root":{{"id":"1","label":"Topic","children":[{{"id":"2","label":"Branch","children":[]}},...]}}}}"
+Create a JSON mind map with root and 3-5 main branches (max 2 levels deep). Balanced structure.
 
-Text: {text}
+Format: {{"root":{{"id":"1","label":"RootLabel","children":[{{"id":"2","label":"Branch1","children":[{{"id":"3","label":"SubBranch","children":[]}}]}},{{"id":"4","label":"Branch2","children":[]}}]}}}}
 
-Return ONLY JSON."""
+IMPORTANT: Return ONLY the JSON object above. No markdown. No extra text.
+
+Text: {text}"""
 
 
 async def generate_diagram_json(
@@ -93,60 +171,89 @@ async def generate_diagram_json(
 ) -> dict:
     if diagram_type == "flowchart":
         prompt = build_flowchart_prompt(text, complexity)
+        schema = FLOWCHART_SCHEMA
+        schema_name = "flowchart"
     else:
         prompt = build_mindmap_prompt(text, complexity)
+        schema = MINDMAP_SCHEMA
+        schema_name = "mindmap"
 
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
     }
 
-    payload = {
-        "model": MODEL,
-        "messages": [
-            {
-                "role": "system",
-                "content": "Output valid JSON only. No markdown or explanations.",
-            },
-            {"role": "user", "content": prompt},
-        ],
-        "temperature": 0.3,
-        "max_tokens": 2048,
-    }
+    MAX_RETRIES = 2
+    last_error = None
 
-    try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(GROQ_API_URL, headers=headers, json=payload)
+    for attempt in range(MAX_RETRIES):
+        # Build system message - indicate previous failure if retry
+        system_msg = "You are a JSON-only API. Output ONLY valid JSON objects. No markdown. No code blocks. No explanations. No tables. ONLY JSON."
+        if attempt > 0:
+            system_msg += f"\n\nATTENTION: Previous attempt {attempt} returned invalid format. Ensure output is strictly valid JSON matching the schema. No markdown wrappers, no explanations."
 
-        if response.status_code == 401:
-            return {"error": "Invalid Groq API key. Please check and try again.", "data": None}
-
-        if response.status_code != 200:
-            return {
-                "error": f"Groq API returned status {response.status_code}: {response.text}",
-                "data": None,
+        payload = {
+            "model": MODEL,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": system_msg,
+                },
+                {"role": "user", "content": prompt},
+            ],
+            "temperature": 0.3,
+            "max_tokens": 2048,
+            "response_format": {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": schema_name,
+                    "strict": True,
+                    "schema": schema
+                }
             }
+        }
 
-        body = response.json()
-        content = body["choices"][0]["message"]["content"]
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(GROQ_API_URL, headers=headers, json=payload)
 
-        # Strip markdown fences if LLM wraps them anyway
-        content = content.strip()
-        if content.startswith("```"):
-            content = content.split("\n", 1)[1] if "\n" in content else content[3:]
-        if content.endswith("```"):
-            content = content[:-3]
-        content = content.strip()
+            if response.status_code == 401:
+                return {"error": "Invalid Groq API key. Please check and try again.", "data": None}
 
-        data = json.loads(content)
-        return {"error": None, "data": data}
+            if response.status_code != 200:
+                last_error = f"Groq API returned status {response.status_code}: {response.text}"
+                if attempt < MAX_RETRIES - 1:
+                    continue
+                return {"error": last_error, "data": None}
 
-    except json.JSONDecodeError:
-        return {"error": "LLM returned invalid JSON. Please try again.", "data": None}
-    except httpx.TimeoutException:
-        return {"error": "Request to Groq API timed out.", "data": None}
-    except Exception as e:
-        return {"error": f"Unexpected error: {str(e)}", "data": None}
+            body = response.json()
+            content = body["choices"][0]["message"]["content"]
+
+            # Strip markdown fences if LLM wraps them anyway
+            content = content.strip()
+            if content.startswith("```"):
+                content = content.split("\n", 1)[1] if "\n" in content else content[3:]
+            if content.endswith("```"):
+                content = content[:-3]
+            content = content.strip()
+
+            data = json.loads(content)
+            return {"error": None, "data": data}
+
+        except json.JSONDecodeError as e:
+            last_error = f"LLM returned invalid JSON: {str(e)}"
+            if attempt < MAX_RETRIES - 1:
+                continue
+            return {"error": last_error, "data": None}
+        except httpx.TimeoutException:
+            return {"error": "Request to Groq API timed out.", "data": None}
+        except Exception as e:
+            last_error = f"Unexpected error: {str(e)}"
+            if attempt < MAX_RETRIES - 1:
+                continue
+            return {"error": last_error, "data": None}
+
+    return {"error": last_error or "Failed to generate valid diagram after retries.", "data": None}
 
 
 async def call_llm_agent(
@@ -330,78 +437,118 @@ async def generate_diagram_with_agents(
         if output.get("output")
     ]
 
-    # Build diagram prompt with agent context
-    prompt = build_diagram_prompt_with_context(text, diagram_type, agent_outputs, complexity)
+    # Determine schema and name based on diagram type
+    if diagram_type == "flowchart":
+        schema = FLOWCHART_SCHEMA
+        schema_name = "flowchart"
+    else:
+        schema = MINDMAP_SCHEMA
+        schema_name = "mindmap"
 
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
     }
 
-    payload = {
-        "model": MODEL,
-        "messages": [
-            {
-                "role": "system",
-                "content": "Output valid JSON only. No explanations.",
-            },
-            {"role": "user", "content": prompt},
-        ],
-        "temperature": 0.3,
-        "max_tokens": 2048,
+    MAX_RETRIES = 2
+    last_error = None
+
+    for attempt in range(MAX_RETRIES):
+        # Build diagram prompt with agent context
+        prompt = build_diagram_prompt_with_context(text, diagram_type, agent_outputs, complexity)
+
+        # Build system message - indicate previous failure if retry
+        system_msg = "You are a JSON-only API. Output ONLY valid JSON objects. No markdown. No code blocks. No explanations. No tables. ONLY JSON."
+        if attempt > 0:
+            system_msg += f"\n\nATTENTION: Previous attempt {attempt} returned invalid format. Ensure output is strictly valid JSON matching the schema. No markdown wrappers, no explanations."
+
+        payload = {
+            "model": MODEL,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": system_msg,
+                },
+                {"role": "user", "content": prompt},
+            ],
+            "temperature": 0.3,
+            "max_tokens": 2048,
+            "response_format": {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": schema_name,
+                    "strict": True,
+                    "schema": schema
+                }
+            }
+        }
+
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(GROQ_API_URL, headers=headers, json=payload)
+
+            if response.status_code == 401:
+                return {
+                    "error": "Invalid Groq API key. Please check and try again.",
+                    "data": None,
+                    "agent_outputs": pipeline_result.get("pipeline_outputs", []),
+                }
+
+            if response.status_code != 200:
+                last_error = f"Groq API returned status {response.status_code}: {response.text}"
+                if attempt < MAX_RETRIES - 1:
+                    continue
+                return {
+                    "error": last_error,
+                    "data": None,
+                    "agent_outputs": pipeline_result.get("pipeline_outputs", []),
+                }
+
+            body = response.json()
+            content = body["choices"][0]["message"]["content"]
+
+            # Strip markdown fences if LLM wraps them anyway
+            content = content.strip()
+            if content.startswith("```"):
+                content = content.split("\n", 1)[1] if "\n" in content else content[3:]
+            if content.endswith("```"):
+                content = content[:-3]
+            content = content.strip()
+
+            data = json.loads(content)
+            return {
+                "error": None,
+                "data": data,
+                "agent_outputs": pipeline_result.get("pipeline_outputs", []),
+            }
+
+        except json.JSONDecodeError as e:
+            last_error = f"LLM returned invalid JSON: {str(e)}"
+            if attempt < MAX_RETRIES - 1:
+                continue
+            return {
+                "error": last_error,
+                "data": None,
+                "agent_outputs": pipeline_result.get("pipeline_outputs", []),
+            }
+        except httpx.TimeoutException:
+            return {
+                "error": "Request to Groq API timed out.",
+                "data": None,
+                "agent_outputs": pipeline_result.get("pipeline_outputs", []),
+            }
+        except Exception as e:
+            last_error = f"Unexpected error: {str(e)}"
+            if attempt < MAX_RETRIES - 1:
+                continue
+            return {
+                "error": last_error,
+                "data": None,
+                "agent_outputs": pipeline_result.get("pipeline_outputs", []),
+            }
+
+    return {
+        "error": last_error or "Failed to generate valid diagram after retries.",
+        "data": None,
+        "agent_outputs": pipeline_result.get("pipeline_outputs", []),
     }
-
-    try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(GROQ_API_URL, headers=headers, json=payload)
-
-        if response.status_code == 401:
-            return {
-                "error": "Invalid Groq API key. Please check and try again.",
-                "data": None,
-                "agent_outputs": pipeline_result.get("pipeline_outputs", []),
-            }
-
-        if response.status_code != 200:
-            return {
-                "error": f"Groq API returned status {response.status_code}: {response.text}",
-                "data": None,
-                "agent_outputs": pipeline_result.get("pipeline_outputs", []),
-            }
-
-        body = response.json()
-        content = body["choices"][0]["message"]["content"]
-
-        # Strip markdown fences if LLM wraps them anyway
-        content = content.strip()
-        if content.startswith("```"):
-            content = content.split("\n", 1)[1] if "\n" in content else content[3:]
-        if content.endswith("```"):
-            content = content[:-3]
-        content = content.strip()
-
-        data = json.loads(content)
-        return {
-            "error": None,
-            "data": data,
-            "agent_outputs": pipeline_result.get("pipeline_outputs", []),
-        }
-
-    except json.JSONDecodeError:
-        return {
-            "error": "LLM returned invalid JSON. Please try again.",
-            "data": None,
-            "agent_outputs": pipeline_result.get("pipeline_outputs", []),
-        }
-    except httpx.TimeoutException:
-        return {
-            "error": "Request to Groq API timed out.",
-            "data": None,
-            "agent_outputs": pipeline_result.get("pipeline_outputs", []),
-        }
-    except Exception as e:
-        return {
-            "error": f"Unexpected error: {str(e)}",
-            "data": None,
-            "agent_outputs": pipeline_result.get("pipeline_outputs", []),
-        }
