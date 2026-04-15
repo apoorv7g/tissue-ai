@@ -151,9 +151,22 @@ header {
     color: var(--text);
     font-family: var(--font);
     font-size: 0.92rem;
-    transition: border-color 0.2s;
+    transition: all 0.2s;
     outline: none;
     width: 100%;
+}
+
+.field-group input:hover,
+.field-group textarea:hover,
+.field-group select:hover {
+    border-color: var(--accent-rgba-50);
+}
+
+.field-group input:focus,
+.field-group textarea:focus,
+.field-group select:focus {
+    border-color: var(--accent);
+    background-color: var(--surface);
 }
 
 .settings-row {
@@ -416,12 +429,6 @@ header {
 .btn-theme-open {
     padding: 6px 12px;
     font-size: 0.78rem;
-}
-
-.field-group input:focus,
-.field-group textarea:focus,
-.field-group select:focus {
-    border-color: var(--border-focus);
 }
 
 .field-group textarea {

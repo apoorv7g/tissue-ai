@@ -1015,6 +1015,11 @@ function updateNodeVisual(id) {
     if (el.shapeType === "circle") {
         el.shape.setAttribute("cx", pos.x);
         el.shape.setAttribute("cy", pos.y);
+        // Update text for mindmap nodes
+        if (el.text) {
+            el.text.setAttribute("x", pos.x);
+            el.text.setAttribute("y", pos.y);
+        }
     } else if (el.shapeType === "diamond") {
         const hw = el.halfW;
         const hh = el.halfH;
@@ -1022,6 +1027,11 @@ function updateNodeVisual(id) {
             "points",
             `${pos.x},${pos.y - hh} ${pos.x + hw},${pos.y} ${pos.x},${pos.y + hh} ${pos.x - hw},${pos.y}`
         );
+        // Update text for flowchart decision nodes
+        if (el.text) {
+            el.text.setAttribute("x", pos.x);
+            el.text.setAttribute("y", pos.y);
+        }
     } else if (el.shapeType === "rect") {
         const sz = nodeSizesGlobal[id];
         if (sz) {
@@ -1029,28 +1039,29 @@ function updateNodeVisual(id) {
             el.shape.setAttribute("y", pos.y - sz.h / 2);
         }
         
-        // Update all text elements within ER entity
-        if (el.text && el.boxHeight) {
-            el.text.setAttribute("x", pos.x);
-            // Keep the original offset from center: -( boxHeight/2 - 15)
-            const nameOffsetY = el.boxHeight / 2 - 15;
-            el.text.setAttribute("y", pos.y - nameOffsetY);
+        // Check if this is an ER entity (has boxHeight) or flowchart node
+        if (el.boxHeight) {
+            // ER Entity: text needs offsetting within the box
+            if (el.text) {
+                el.text.setAttribute("x", pos.x);
+                const nameOffsetY = el.boxHeight / 2 - 15;
+                el.text.setAttribute("y", pos.y - nameOffsetY);
+            }
+            
+            // Update attribute texts if present
+            if (el.attrTexts && Array.isArray(el.attrTexts)) {
+                el.attrTexts.forEach((attrText, idx) => {
+                    attrText.setAttribute("x", pos.x);
+                    attrText.setAttribute("y", pos.y - (el.boxHeight / 2 - 35) + idx * 18);
+                });
+            }
+        } else {
+            // Flowchart node: text moves with the node at center
+            if (el.text) {
+                el.text.setAttribute("x", pos.x);
+                el.text.setAttribute("y", pos.y);
+            }
         }
-        
-        // Update attribute texts if present
-        if (el.attrTexts && Array.isArray(el.attrTexts)) {
-            const boxHeight = el.boxHeight || 50;
-            el.attrTexts.forEach((attrText, idx) => {
-                attrText.setAttribute("x", pos.x);
-                attrText.setAttribute("y", pos.y - (boxHeight / 2 - 35) + idx * 18);
-            });
-        }
-        return; // Skip generic text update below for ER entities
-    }
-
-    if (el.text) {
-        el.text.setAttribute("x", pos.x);
-        el.text.setAttribute("y", pos.y);
     }
 }
 
@@ -1940,11 +1951,14 @@ function renderVennDiagram(data) {
         maxY = -Infinity;
 
     const circlePositions = {};
+    
+    // Use theme colors for Venn diagram sets
+    const theme = getCurrentTheme();
     const colors = [
-        currentTheme.accent,
-        "#ef4444",
-        "#10b981",
-        "#f59e0b",
+        theme.flowchart.start || currentTheme.accent,
+        theme.flowchart.process || "#6366f1",
+        theme.flowchart.decision || "#f59e0b",
+        theme.flowchart.end || "#ef4444",
     ];
 
     // Position circles
