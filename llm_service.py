@@ -75,6 +75,83 @@ MINDMAP_SCHEMA = {
     }
 }
 
+# JSON Schema for ER Diagram structured outputs
+ER_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "entities": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "string"},
+                    "name": {"type": "string"},
+                    "attributes": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    }
+                },
+                "required": ["id", "name", "attributes"],
+                "additionalProperties": False
+            }
+        },
+        "relationships": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "string"},
+                    "name": {"type": "string"},
+                    "entity1": {"type": "string"},
+                    "entity2": {"type": "string"},
+                    "cardinality": {"type": "string"}
+                },
+                "required": ["id", "name", "entity1", "entity2", "cardinality"],
+                "additionalProperties": False
+            }
+        }
+    },
+    "required": ["entities", "relationships"],
+    "additionalProperties": False
+}
+
+# JSON Schema for Venn Diagram structured outputs
+VENN_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "sets": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "string"},
+                    "label": {"type": "string"}
+                },
+                "required": ["id", "label"],
+                "additionalProperties": False
+            }
+        },
+        "regions": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "string"},
+                    "label": {"type": "string"},
+                    "setIds": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    }
+                },
+                "required": ["id", "label", "setIds"],
+                "additionalProperties": False
+            }
+        }
+    },
+    "required": ["sets", "regions"],
+    "additionalProperties": False
+}
+
 
 def build_flowchart_prompt(text: str, complexity: str = "brief") -> str:
     if complexity == "simple":
@@ -162,6 +239,92 @@ IMPORTANT: Return ONLY the JSON object above. No markdown. No extra text.
 Text: {text}"""
 
 
+def build_er_prompt(text: str, complexity: str = "brief") -> str:
+    if complexity == "simple":
+        return f"""You MUST return ONLY valid JSON. No text, no markdown, no explanations, no code blocks.
+
+Create a simple ER diagram with 2-3 entities and 1-2 relationships. Minimal.
+
+Format: {{"entities":[{{"id":"1","name":"User","attributes":["id","name"]}},{{"id":"2","name":"Post","attributes":["id","title"]}}],"relationships":[{{"id":"r1","name":"creates","entity1":"1","entity2":"2","cardinality":"1:N"}}]}}
+
+IMPORTANT: Return ONLY the JSON object above. No markdown. No extra text.
+
+Text: {text}"""
+    elif complexity == "detailed":
+        return f"""You MUST return ONLY valid JSON. No text, no markdown, no explanations, no code blocks.
+
+Create a detailed ER diagram with 4-6 entities and 3-5 relationships with attributes. More depth.
+
+Format: {{"entities":[{{"id":"1","name":"Entity1","attributes":["attr1","attr2"]}},{{"id":"2","name":"Entity2","attributes":["attr1","attr2"]}}],"relationships":[{{"id":"r1","name":"rel","entity1":"1","entity2":"2","cardinality":"M:N"}}]}}
+
+IMPORTANT: Return ONLY the JSON object above. No markdown. No extra text.
+
+Text: {text}"""
+    elif complexity == "extensive":
+        return f"""You MUST return ONLY valid JSON. No text, no markdown, no explanations, no code blocks. NO MARKDOWN TABLES.
+
+Create a comprehensive ER diagram with 8+ entities, 6+ relationships, multiple attributes per entity, diverse cardinality notations (1:1, 1:N, M:N).
+
+Format: {{"entities":[{{"id":"1","name":"Entity1","attributes":["attr1","attr2"]}},{{"id":"2","name":"Entity2","attributes":["attr1"]}},{{"id":"3","name":"Entity3","attributes":["attr1","attr2","attr3"]}}],"relationships":[{{"id":"r1","name":"rel1","entity1":"1","entity2":"2","cardinality":"1:1"}},{{"id":"r2","name":"rel2","entity1":"2","entity2":"3","cardinality":"M:N"}}]}}
+
+IMPORTANT: Return ONLY the JSON object above. No markdown. No tables. No explanations. ONLY JSON.
+
+Text: {text}"""
+    else:  # brief (default)
+        return f"""You MUST return ONLY valid JSON. No text, no markdown, no explanations, no code blocks.
+
+Create a balanced ER diagram with 3-5 entities and 2-4 relationships. Moderate detail.
+
+Format: {{"entities":[{{"id":"1","name":"Entity1","attributes":["id","name"]}},{{"id":"2","name":"Entity2","attributes":["id","title"]}}],"relationships":[{{"id":"r1","name":"belongs_to","entity1":"1","entity2":"2","cardinality":"N:1"}}]}}
+
+IMPORTANT: Return ONLY the JSON object above. No markdown. No extra text.
+
+Text: {text}"""
+
+
+def build_venn_prompt(text: str, complexity: str = "brief") -> str:
+    if complexity == "simple":
+        return f"""You MUST return ONLY valid JSON. No text, no markdown, no explanations, no code blocks.
+
+Create a simple Venn diagram with 2 sets and 3 regions (only A, only B, A∩B).
+
+Format: {{"sets":[{{"id":"1","label":"Set A"}},{{"id":"2","label":"Set B"}}],"regions":[{{"id":"r1","label":"Only A","setIds":["1"]}},{{"id":"r2","label":"Both","setIds":["1","2"]}},{{"id":"r3","label":"Only B","setIds":["2"]}}]}}
+
+IMPORTANT: Return ONLY the JSON object above. No markdown. No extra text.
+
+Text: {text}"""
+    elif complexity == "detailed":
+        return f"""You MUST return ONLY valid JSON. No text, no markdown, no explanations, no code blocks.
+
+Create a detailed Venn diagram with 3 sets and 7 regions (all intersections properly labeled).
+
+Format: {{"sets":[{{"id":"1","label":"Set A"}},{{"id":"2","label":"Set B"}},{{"id":"3","label":"Set C"}}],"regions":[{{"id":"r1","label":"A only","setIds":["1"]}},{{"id":"r2","label":"A∩B","setIds":["1","2"]}},{{"id":"r3","label":"All three","setIds":["1","2","3"]}}]}}
+
+IMPORTANT: Return ONLY the JSON object above. No markdown. No extra text.
+
+Text: {text}"""
+    elif complexity == "extensive":
+        return f"""You MUST return ONLY valid JSON. No text, no markdown, no explanations, no code blocks. NO MARKDOWN TABLES.
+
+Create a comprehensive Venn diagram with 3-4 sets showing complex overlaps and intersections with descriptive labels for each region.
+
+Format: {{"sets":[{{"id":"1","label":"Technology"}},{{"id":"2","label":"Science"}},{{"id":"3","label":"Business"}},{{"id":"4","label":"Data"}}],"regions":[{{"id":"r1","label":"Tech Only","setIds":["1"]}},{{"id":"r2","label":"Tech∩Data","setIds":["1","4"]}},{{"id":"r3","label":"All four","setIds":["1","2","3","4"]}}]}}
+
+IMPORTANT: Return ONLY the JSON object above. No markdown. No tables. No explanations. ONLY JSON.
+
+Text: {text}"""
+    else:  # brief (default)
+        return f"""You MUST return ONLY valid JSON. No text, no markdown, no explanations, no code blocks.
+
+Create a balanced Venn diagram with 2-3 sets and clear region labels (intersections).
+
+Format: {{"sets":[{{"id":"1","label":"Set A"}},{{"id":"2","label":"Set B"}}],"regions":[{{"id":"r1","label":"A","setIds":["1"]}},{{"id":"r2","label":"A and B","setIds":["1","2"]}},{{"id":"r3","label":"B","setIds":["2"]}}]}}
+
+IMPORTANT: Return ONLY the JSON object above. No markdown. No extra text.
+
+Text: {text}"""
+
+
 async def generate_diagram_json(
     text: str, 
     diagram_type: str, 
@@ -173,10 +336,23 @@ async def generate_diagram_json(
         prompt = build_flowchart_prompt(text, complexity)
         schema = FLOWCHART_SCHEMA
         schema_name = "flowchart"
-    else:
+    elif diagram_type == "mindmap":
         prompt = build_mindmap_prompt(text, complexity)
         schema = MINDMAP_SCHEMA
         schema_name = "mindmap"
+    elif diagram_type == "er":
+        prompt = build_er_prompt(text, complexity)
+        schema = ER_SCHEMA
+        schema_name = "er_diagram"
+    elif diagram_type == "venn":
+        prompt = build_venn_prompt(text, complexity)
+        schema = VENN_SCHEMA
+        schema_name = "venn_diagram"
+    else:
+        # Default to flowchart
+        prompt = build_flowchart_prompt(text, complexity)
+        schema = FLOWCHART_SCHEMA
+        schema_name = "flowchart"
 
     headers = {
         "Authorization": f"Bearer {api_key}",
@@ -398,8 +574,14 @@ def build_diagram_prompt_with_context(
 
     if diagram_type == "flowchart":
         base_prompt = build_flowchart_prompt(text, complexity)
-    else:
+    elif diagram_type == "mindmap":
         base_prompt = build_mindmap_prompt(text, complexity)
+    elif diagram_type == "er":
+        base_prompt = build_er_prompt(text, complexity)
+    elif diagram_type == "venn":
+        base_prompt = build_venn_prompt(text, complexity)
+    else:
+        base_prompt = build_flowchart_prompt(text, complexity)
 
     if agent_outputs:
         # Insert context into the prompt
@@ -441,9 +623,18 @@ async def generate_diagram_with_agents(
     if diagram_type == "flowchart":
         schema = FLOWCHART_SCHEMA
         schema_name = "flowchart"
-    else:
+    elif diagram_type == "mindmap":
         schema = MINDMAP_SCHEMA
         schema_name = "mindmap"
+    elif diagram_type == "er":
+        schema = ER_SCHEMA
+        schema_name = "er_diagram"
+    elif diagram_type == "venn":
+        schema = VENN_SCHEMA
+        schema_name = "venn_diagram"
+    else:
+        schema = FLOWCHART_SCHEMA
+        schema_name = "flowchart"
 
     headers = {
         "Authorization": f"Bearer {api_key}",

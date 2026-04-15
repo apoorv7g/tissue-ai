@@ -42,6 +42,17 @@
     --accent-rgba-80: rgba(129, 140, 248, 0.8);
     --accent-rgba-30-export: rgba(99, 102, 241, 0.3);
     --accent-rgba-15-export: rgba(99, 102, 241, 0.15);
+    
+    /* ER Diagram Colors */
+    --er-entity-bg: rgba(168, 85, 247, 0.1);
+    --er-entity-border: #a855f7;
+    --er-relationship: #f59e0b;
+    
+    /* Venn Diagram Colors */
+    --venn-set-1: #3b82f6;
+    --venn-set-2: #ef4444;
+    --venn-set-3: #10b981;
+    --venn-set-4: #f59e0b;
 }
 
 body {

@@ -865,10 +865,16 @@ btnGenerate.addEventListener("click", async () => {
             window.lastAgentOutputs = result.agent_outputs;
         }
 
-        showStatus("success", "Diagram generated successfully.");
-        canvasTitle.textContent =
-            type === "flowchart" ? "Flowchart" : "Mind Map";
+        // Update canvas title
+        const titleMap = {
+            flowchart: "Flowchart",
+            mindmap: "Mind Map",
+            er: "ER Diagram",
+            venn: "Venn Diagram"
+        };
+        canvasTitle.textContent = titleMap[type] || "Diagram";
 
+        showStatus("success", "Diagram generated successfully.");
         renderDiagram();
         setTimeout(hideStatus, 3000);
     } catch (err) {
@@ -897,8 +903,14 @@ function renderDiagram() {
 
     if (diagramType === "flowchart") {
         renderFlowchart(diagramData);
-    } else {
+    } else if (diagramType === "mindmap") {
         renderMindmap(diagramData);
+    } else if (diagramType === "er") {
+        renderErDiagram(diagramData);
+    } else if (diagramType === "venn") {
+        renderVennDiagram(diagramData);
+    } else {
+        renderFlowchart(diagramData);
     }
 }
 
@@ -1688,6 +1700,296 @@ function renderMindmap(data) {
         nodesGroup.appendChild(g);
     });
 
+    attachSvgEvents(svg);
+    canvasArea.appendChild(svg);
+}
+
+// ═══════════════════════════
+//  ER DIAGRAM RENDERING
+// ═══════════════════════════
+
+function renderErDiagram(data) {
+    const entities = data.entities || [];
+    const relationships = data.relationships || [];
+
+    // Calculate layout - position entities in a grid
+    const entitiesPerRow = Math.ceil(Math.sqrt(entities.length));
+    const spacing = 350;
+    const startX = -((entitiesPerRow - 1) * spacing) / 2;
+    const startY = -150;
+
+    const entityPositions = {};
+    entities.forEach((entity, idx) => {
+        const row = Math.floor(idx / entitiesPerRow);
+        const col = idx % entitiesPerRow;
+        entityPositions[entity.id] = {
+            x: startX + col * spacing,
+            y: startY + row * spacing,
+        };
+    });
+
+    // Calculate bounds
+    let minX = Infinity,
+        minY = Infinity,
+        maxX = -Infinity,
+        maxY = -Infinity;
+
+    entities.forEach((entity) => {
+        const pos = entityPositions[entity.id];
+        minX = Math.min(minX, pos.x - 70);
+        minY = Math.min(minY, pos.y - 100);
+        maxX = Math.max(maxX, pos.x + 70);
+        maxY = Math.max(maxY, pos.y + 100);
+    });
+
+    const pad = 100;
+    viewBox = {
+        x: minX - pad,
+        y: minY - pad,
+        w: maxX - minX + pad * 2,
+        h: maxY - minY + pad * 2,
+    };
+    initialViewBox = { ...viewBox };
+
+    const svg = createSvgElement("svg", {
+        id: "diagram-svg",
+        viewBox: `${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`,
+        preserveAspectRatio: "xMidYMid meet",
+    });
+
+    const nodesGroup = createSvgElement("g");
+    nodesGroup.setAttribute("id", "nodes");
+
+    // Render relationships first (behind entities)
+    relationships.forEach((rel) => {
+        const pos1 = entityPositions[rel.entity1];
+        const pos2 = entityPositions[rel.entity2];
+
+        if (!pos1 || !pos2) return;
+
+        // Line between entities
+        const line = createSvgElement("line", {
+            x1: pos1.x,
+            y1: pos1.y,
+            x2: pos2.x,
+            y2: pos2.y,
+            stroke: currentTheme.accent || "#f59e0b",
+            "stroke-width": "2",
+        });
+        nodesGroup.appendChild(line);
+
+        // Relationship label
+        const midX = (pos1.x + pos2.x) / 2;
+        const midY = (pos1.y + pos2.y) / 2;
+
+        const bgRect = createSvgElement("rect", {
+            x: midX - 30,
+            y: midY - 10,
+            width: "60",
+            height: "20",
+            fill: currentTheme.surface,
+            stroke: currentTheme.border,
+            "stroke-width": "1",
+            rx: "3",
+        });
+        nodesGroup.appendChild(bgRect);
+
+        const relText = createSvgElement("text", {
+            x: midX,
+            y: midY + 4,
+            "text-anchor": "middle",
+            "font-size": "10",
+            fill: currentTheme.textMuted,
+        });
+        relText.textContent = rel.name;
+        nodesGroup.appendChild(relText);
+
+        // Cardinality label
+        const cardText = createSvgElement("text", {
+            x: pos2.x - 20,
+            y: pos2.y + 20,
+            "font-size": "9",
+            fill: currentTheme.accent,
+        });
+        cardText.textContent = rel.cardinality;
+        nodesGroup.appendChild(cardText);
+    });
+
+    // Render entities (rectangles with attributes)
+    entities.forEach((entity) => {
+        const pos = entityPositions[entity.id];
+        const attrs = entity.attributes || [];
+        const boxHeight = 50 + attrs.length * 18;
+
+        // Entity box
+        const rect = createSvgElement("rect", {
+            x: pos.x - 70,
+            y: pos.y - boxHeight / 2,
+            width: "140",
+            height: boxHeight,
+            fill: currentTheme.surface,
+            stroke: currentTheme.accent,
+            "stroke-width": "2",
+            rx: "4",
+        });
+        nodesGroup.appendChild(rect);
+
+        // Entity name
+        const nameText = createSvgElement("text", {
+            x: pos.x,
+            y: pos.y - (boxHeight / 2 - 15),
+            "text-anchor": "middle",
+            "font-weight": "bold",
+            "font-size": "14",
+            fill: currentTheme.text,
+        });
+        nameText.textContent = entity.name;
+        nodesGroup.appendChild(nameText);
+
+        // Attributes (smaller text)
+        attrs.forEach((attr, idx) => {
+            const attrText = createSvgElement("text", {
+                x: pos.x,
+                y: pos.y - (boxHeight / 2 - 35) + idx * 18,
+                "text-anchor": "middle",
+                "font-size": "11",
+                fill: currentTheme.textMuted,
+            });
+            attrText.textContent = attr;
+            nodesGroup.appendChild(attrText);
+        });
+
+        nodePositions[entity.id] = pos;
+        nodeSizesGlobal[entity.id] = { w: 140, h: boxHeight };
+    });
+
+    svg.appendChild(nodesGroup);
+    attachSvgEvents(svg);
+    canvasArea.appendChild(svg);
+}
+
+// ═══════════════════════════
+//  VENN DIAGRAM RENDERING
+// ═══════════════════════════
+
+function renderVennDiagram(data) {
+    const sets = data.sets || [];
+    const regions = data.regions || [];
+
+    const circleRadius = 120;
+    let minX = Infinity,
+        minY = Infinity,
+        maxX = -Infinity,
+        maxY = -Infinity;
+
+    const circlePositions = {};
+    const colors = [
+        currentTheme.accent,
+        "#ef4444",
+        "#10b981",
+        "#f59e0b",
+    ];
+
+    // Position circles
+    if (sets.length === 1) {
+        circlePositions[sets[0].id] = { x: 0, y: 0 };
+    } else if (sets.length === 2) {
+        circlePositions[sets[0].id] = { x: -100, y: 0 };
+        circlePositions[sets[1].id] = { x: 100, y: 0 };
+    } else if (sets.length === 3) {
+        const angle = (2 * Math.PI) / 3;
+        for (let i = 0; i < 3; i++) {
+            circlePositions[sets[i].id] = {
+                x: 120 * Math.cos(i * angle - Math.PI / 2),
+                y: 120 * Math.sin(i * angle - Math.PI / 2),
+            };
+        }
+    } else if (sets.length >= 4) {
+        circlePositions[sets[0].id] = { x: -100, y: -80 };
+        circlePositions[sets[1].id] = { x: 100, y: -80 };
+        if (sets[2]) circlePositions[sets[2].id] = { x: -100, y: 80 };
+        if (sets[3]) circlePositions[sets[3].id] = { x: 100, y: 80 };
+    }
+
+    // Calculate bounds
+    sets.forEach((set, idx) => {
+        const pos = circlePositions[set.id];
+        minX = Math.min(minX, pos.x - circleRadius);
+        minY = Math.min(minY, pos.y - circleRadius);
+        maxX = Math.max(maxX, pos.x + circleRadius);
+        maxY = Math.max(maxY, pos.y + circleRadius);
+    });
+
+    const pad = 150;  // Increased padding for set labels
+    viewBox = {
+        x: minX - pad,
+        y: minY - pad,
+        w: maxX - minX + pad * 2,
+        h: maxY - minY + pad * 2,
+    };
+    initialViewBox = { ...viewBox };
+
+    const svg = createSvgElement("svg", {
+        id: "diagram-svg",
+        viewBox: `${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`,
+        preserveAspectRatio: "xMidYMid meet",
+    });
+
+    const nodesGroup = createSvgElement("g");
+    nodesGroup.setAttribute("id", "nodes");
+
+    // Render circles
+    sets.forEach((set, idx) => {
+        const pos = circlePositions[set.id];
+        const circle = createSvgElement("circle", {
+            cx: pos.x,
+            cy: pos.y,
+            r: circleRadius,
+            fill: colors[idx % colors.length],
+            opacity: "0.2",
+            stroke: colors[idx % colors.length],
+            "stroke-width": "2",
+        });
+        nodesGroup.appendChild(circle);
+
+        // Set label - positioned above or to side of circle with adequate spacing
+        let labelX, labelY;
+        
+        if (sets.length === 1) {
+            // Single circle: label at top
+            labelX = pos.x;
+            labelY = pos.y - circleRadius - 40;
+        } else if (sets.length === 2) {
+            // Two circles: labels above each
+            labelX = pos.x;
+            labelY = pos.y - circleRadius - 40;
+        } else {
+            // 3+ circles: use radial positioning at fixed distance
+            const angle = Math.atan2(pos.y, pos.x);
+            const offsetDistance = circleRadius + 60;
+            labelX = pos.x + offsetDistance * Math.cos(angle);
+            labelY = pos.y + offsetDistance * Math.sin(angle);
+        }
+        
+        const label = createSvgElement("text", {
+            x: labelX,
+            y: labelY,
+            "font-weight": "bold",
+            "font-size": "13",
+            fill: currentTheme.text,
+            "text-anchor": "middle",
+            "dominant-baseline": "middle",
+        });
+        label.textContent = set.label;
+        nodesGroup.appendChild(label);
+
+        nodePositions[set.id] = pos;
+    });
+
+    // Render region labels (intersections) - REMOVED per user request
+    // Users can visually infer intersections from the diagram itself
+
+    svg.appendChild(nodesGroup);
     attachSvgEvents(svg);
     canvasArea.appendChild(svg);
 }

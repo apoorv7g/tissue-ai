@@ -43,7 +43,7 @@ async def generate(
             content={"success": False, "error": "Input text cannot be empty."},
         )
 
-    if diagram_type not in ("flowchart", "mindmap"):
+    if diagram_type not in ("flowchart", "mindmap", "er", "venn"):
         return JSONResponse(
             status_code=400,
             content={"success": False, "error": "Invalid diagram type."},
@@ -198,7 +198,7 @@ async def generate_with_agents(
             content={"success": False, "error": "Input text cannot be empty."},
         )
 
-    if diagram_type not in ("flowchart", "mindmap"):
+    if diagram_type not in ("flowchart", "mindmap", "er", "venn"):
         return JSONResponse(
             status_code=400,
             content={"success": False, "error": "Invalid diagram type."},
