@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/static/style.css" />
+    <link rel="stylesheet" href="/static/agents-modal.css" />
 </head>
 <body>
     <div class="app-container">
@@ -32,7 +33,7 @@
                     <p class="api-note">
                         Get a free key at
                         <a href="https://console.groq.com/keys" target="_blank" rel="noopener">console.groq.com</a>.
-                        Your key is never stored.
+                        Your key is saved locally in your browser.
                     </p>
                 </div>
 
@@ -52,6 +53,26 @@
                     ></textarea>
                 </div>
 
+                <div class="settings-row">
+                    <div class="field-group">
+                        <label for="complexity">Diagram Complexity</label>
+                        <select id="complexity">
+                            <option value="simple">Simple</option>
+                            <option value="brief" selected>Brief</option>
+                            <option value="detailed">Detailed</option>
+                            <option value="extensive">Extensive</option>
+                        </select>
+                    </div>
+
+                    <div class="field-group">
+                        <label for="temperature">Temperature</label>
+                        <div class="temperature-control">
+                            <input type="range" id="temperature" min="0" max="2" step="0.1" value="0.7" />
+                            <span id="temp-value">0.7</span>
+                        </div>
+                    </div>
+                </div>
+
                 <button class="btn-generate" id="btn-generate">
                     Generate Diagram
                 </button>
@@ -67,6 +88,7 @@
                 <div class="canvas-toolbar">
                     <h2 id="canvas-title">Canvas</h2>
                     <div class="toolbar-actions">
+                        <button class="btn-tool" id="btn-agents" title="Agent Pipeline">Agents</button>
                         <button class="btn-tool" id="btn-zoom-in" title="Zoom In">+</button>
                         <button class="btn-tool" id="btn-zoom-out" title="Zoom Out">-</button>
                         <button class="btn-tool" id="btn-reset" title="Reset View">Reset</button>
@@ -226,7 +248,33 @@
         </div>
     </div>
 
+    <!-- Agents Modal -->
+    <div class="agents-modal-backdrop" id="agents-modal-backdrop" hidden>
+        <div class="agents-modal" role="dialog" aria-modal="true" aria-labelledby="agents-modal-title">
+            <div class="agents-modal-header">
+                <div>
+                    <p class="agents-modal-kicker">Pipeline</p>
+                    <h3 id="agents-modal-title">Agent Processing Pipeline</h3>
+                </div>
+                <button class="btn-icon" id="btn-agents-close" type="button">✕</button>
+            </div>
+
+            <div class="agents-modal-body">
+                <div class="pipeline-info">
+                    <p>Enable/disable agents or drag to reorder processing sequence</p>
+                </div>
+                
+                <div class="pipeline-flow" id="agents-pipeline-list">
+                    <!-- Pipeline will be rendered here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Agents Toggle Button (add to toolbar) -->
+
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+    <script src="/static/agents.js"></script>
     <script src="/static/app.js"></script>
 </body>
 </html>

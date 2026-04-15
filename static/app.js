@@ -19,6 +19,7 @@ let redrawEdges = null;
 const STORAGE_KEYS = {
     themes: "tissue-ai-custom-themes",
     activeTheme: "tissue-ai-active-theme",
+    apiKey: "tissue-ai-api-key",
 };
 
 const BASE_THEMES = [
@@ -175,6 +176,12 @@ const nodeEditorBackdrop = document.getElementById("node-editor-backdrop");
 const nodeEditorInput = document.getElementById("node-editor-input");
 const btnNodeSave = document.getElementById("btn-node-save");
 const btnNodeCancel = document.getElementById("btn-node-cancel");
+
+// New controls
+const apiKeyInput = document.getElementById("api-key");
+const temperatureSlider = document.getElementById("temperature");
+const temperatureValue = document.getElementById("temp-value");
+const complexitySelect = document.getElementById("complexity");
 
 let themeState = loadThemeState();
 let currentTheme = getThemeById(themeState.activeThemeId) || BASE_THEMES[0];
@@ -557,6 +564,11 @@ function updateThemeSelection(themeId) {
     persistThemes();
     applyThemeToPage(theme);
     renderThemeLibrary();
+    
+    // Re-render diagram if one exists to apply new theme colors
+    if (diagramData) {
+        renderDiagram();
+    }
 }
 
 function saveCurrentTheme() {
@@ -610,6 +622,11 @@ function saveCurrentTheme() {
     themeNameInput.value = theme.name;
     showStatus("success", "Theme saved successfully.");
     setTimeout(hideStatus, 2000);
+    
+    // Re-render diagram if one exists to apply new theme colors
+    if (diagramData) {
+        renderDiagram();
+    }
 }
 
 function createNewTheme() {
@@ -636,6 +653,11 @@ function createNewTheme() {
     // Show success message
     showStatus("success", "New theme created! Customize and save it.");
     setTimeout(hideStatus, 3000);
+    
+    // Re-render diagram if one exists to apply new theme colors
+    if (diagramData) {
+        renderDiagram();
+    }
 }
 
 function updateThemeFromInputs() {
@@ -787,6 +809,8 @@ btnGenerate.addEventListener("click", async () => {
     const apiKey = document.getElementById("api-key").value.trim();
     const text = document.getElementById("input-text").value.trim();
     const type = document.getElementById("diagram-type").value;
+    const complexity = document.getElementById("complexity").value;
+    const temperature = parseFloat(document.getElementById("temperature").value);
 
     if (!apiKey) {
         showStatus("error", "Please enter your Groq API key.");
@@ -799,15 +823,28 @@ btnGenerate.addEventListener("click", async () => {
 
     btnGenerate.disabled = true;
     btnGenerate.textContent = "Generating...";
-    showStatus("loading", "Sending text to LLM for semantic extraction...");
+
+    // Check if agents are enabled
+    const useAgents = typeof hasEnabledAgents !== "undefined" && hasEnabledAgents();
+
+    if (useAgents) {
+        showStatus("loading", "Processing through multi-agent pipeline...");
+    } else {
+        showStatus("loading", "Sending text to LLM for semantic extraction...");
+    }
 
     try {
         const formData = new FormData();
         formData.append("text", text);
         formData.append("diagram_type", type);
         formData.append("api_key", apiKey);
+        formData.append("complexity", complexity);
+        formData.append("temperature", temperature.toString());
 
-        const response = await fetch("/generate", {
+        // Use /generate-with-agents if agents are enabled, otherwise use /generate
+        const endpoint = useAgents ? "/generate-with-agents" : "/generate";
+
+        const response = await fetch(endpoint, {
             method: "POST",
             body: formData,
         });
@@ -821,6 +858,11 @@ btnGenerate.addEventListener("click", async () => {
 
         diagramData = result.data;
         diagramType = result.diagram_type;
+
+        // Store agent outputs if available
+        if (result.agent_outputs) {
+            window.lastAgentOutputs = result.agent_outputs;
+        }
 
         showStatus("success", "Diagram generated successfully.");
         canvasTitle.textContent =
@@ -1740,6 +1782,35 @@ function handleExport(format) {
 renderThemeOptions();
 applyThemeToPage(currentTheme);
 renderThemeLibrary();
+
+// ══════════════════════════════════════
+// Initialize API Key and Settings
+// ══════════════════════════════════════
+
+// Load API key from localStorage
+if (apiKeyInput) {
+    const savedApiKey = localStorage.getItem(STORAGE_KEYS.apiKey);
+    if (savedApiKey) {
+        apiKeyInput.value = savedApiKey;
+    }
+    
+    // Save API key to localStorage on input
+    apiKeyInput.addEventListener("change", () => {
+        const key = apiKeyInput.value.trim();
+        if (key) {
+            localStorage.setItem(STORAGE_KEYS.apiKey, key);
+        } else {
+            localStorage.removeItem(STORAGE_KEYS.apiKey);
+        }
+    });
+}
+
+// Update temperature display value
+if (temperatureSlider && temperatureValue) {
+    temperatureSlider.addEventListener("input", () => {
+        temperatureValue.textContent = temperatureSlider.value;
+    });
+}
 
 if (btnTheme) {
     btnTheme.addEventListener("click", openThemeModal);

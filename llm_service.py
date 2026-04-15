@@ -1,110 +1,100 @@
 import json
 import httpx
+from typing import List, Dict, Any, Optional
+from agents_config import Agent, get_enabled_agents
 
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+# OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
 MODEL = "openai/gpt-oss-120b"
 
-
-def build_flowchart_prompt(text: str) -> str:
-    return f"""You are a professional flowchart design assistant. Analyze the given text and extract a clear, logical flowchart structure.
-
-Rules for Professional Flowcharts:
-- Start with a single "start" node (represents entry point)
-- End with a single "end" node (represents completion)
-- Use "process" nodes for actions, tasks, or operations
-- Use "decision" nodes only for true yes/no choices (2 outgoing edges: yes/no)
-- Ensure a logical flow from top to bottom with no circular dependencies
-- Keep node labels concise (3-6 words max)
-- Every node must have at least one outgoing edge (except end nodes)
-- Decision nodes must have exactly 2 outgoing edges
-- Use edge labels only for conditional branches (e.g., "Yes", "No")
-- Avoid redundant or self-referencing nodes
-
-Output format (VALID JSON ONLY):
-{{
-  "nodes": [
-    {{"id": "1", "label": "Start Process", "type": "start"}},
-    {{"id": "2", "label": "Analyze Requirements", "type": "process"}},
-    {{"id": "3", "label": "Requirements Clear?", "type": "decision"}},
-    {{"id": "4", "label": "Execute Action", "type": "process"}},
-    {{"id": "5", "label": "End", "type": "end"}}
-  ],
-  "edges": [
-    {{"from": "1", "to": "2", "label": ""}},
-    {{"from": "2", "to": "3", "label": ""}},
-    {{"from": "3", "to": "4", "label": "Yes"}},
-    {{"from": "3", "to": "5", "label": "No"}},
-    {{"from": "4", "to": "5", "label": ""}}
-  ]
-}}
-
-Text to analyze:
-\"\"\"{text}\"\"\"
-
-Return ONLY valid JSON. No markdown, explanations, or code fences."""
+# API endpoints mapping for different models
+API_ENDPOINTS = {
+    "groq": "https://api.groq.com/openai/v1/chat/completions",
+    # "openai": "https://api.openai.com/v1/chat/completions",
+}
 
 
-def build_mindmap_prompt(text: str) -> str:
-    return f"""You are a professional mind map designer. Extract a hierarchical mind map structure from the given text.
+def build_flowchart_prompt(text: str, complexity: str = "brief") -> str:
+    if complexity == "simple":
+        return f"""Create a 3-5 node flowchart with just start, basic process, and end. Minimal nodes.
 
-Rules for Professional Mind Maps:
-- Create a central root node representing the main topic (brief, 2-4 words)
-- Branch into 3-6 main categories or themes
-- Each main branch can have 2-4 sub-branches
-- Keep labels concise and descriptive (2-5 words)
-- Maximum depth: 3 levels (root → branch → leaf)
-- No duplicate concepts across branches
-- Ensure logical grouping and hierarchy
-- Avoid circular relationships
-- Total nodes should be between 8 and 25
+JSON: {{"nodes":[{{"id":"1","label":"Start","type":"start"}},...],"edges":[{{"from":"1","to":"2","label":""}},...]}}"
 
-Output format (VALID JSON ONLY):
-{{
-  "root": {{
-    "id": "1",
-    "label": "Project Management",
-    "children": [
-      {{
-        "id": "2",
-        "label": "Planning",
-        "children": [
-          {{"id": "3", "label": "Define Scope", "children": []}},
-          {{"id": "4", "label": "Risk Assessment", "children": []}}
-        ]
-      }},
-      {{
-        "id": "5",
-        "label": "Execution",
-        "children": [
-          {{"id": "6", "label": "Resource Allocation", "children": []}},
-          {{"id": "7", "label": "Timeline Management", "children": []}}
-        ]
-      }},
-      {{
-        "id": "8",
-        "label": "Monitoring",
-        "children": [
-          {{"id": "9", "label": "Track Progress", "children": []}},
-          {{"id": "10", "label": "Quality Check", "children": []}}
-        ]
-      }}
-    ]
-  }}
-}}
+Text: {text}
 
-Text to analyze:
-\"\"\"{text}\"\"\"
+Return ONLY JSON."""
+    elif complexity == "detailed":
+        return f"""Create a flowchart with 8-12 nodes including start, processes, decisions, and end. More depth.
 
-Return ONLY valid JSON. No markdown, explanations, or code fences."""
+JSON: {{"nodes":[{{"id":"1","label":"Start","type":"start"}},...],"edges":[{{"from":"1","to":"2","label":""}},...]}}"
+
+Text: {text}
+
+Return ONLY JSON."""
+    elif complexity == "extensive":
+        return f"""Create a comprehensive flowchart with 15+ nodes including start, multiple processes, decisions, loops, and end.
+
+JSON: {{"nodes":[{{"id":"1","label":"Start","type":"start"}},...],"edges":[{{"from":"1","to":"2","label":""}},...]}}"
+
+Text: {text}
+
+Return ONLY JSON."""
+    else:  # brief (default)
+        return f"""Create a flowchart with 5-8 nodes: start, 2-3 processes/decisions, and end. Concise.
+
+JSON: {{"nodes":[{{"id":"1","label":"Start","type":"start"}},...],"edges":[{{"from":"1","to":"2","label":""}},...]}}"
+
+Text: {text}
+
+Return ONLY JSON."""
+
+
+def build_mindmap_prompt(text: str, complexity: str = "brief") -> str:
+    if complexity == "simple":
+        return f"""Create a mind map with root and 2-3 main branches. Simple and minimal.
+
+JSON: {{"root":{{"id":"1","label":"Topic","children":[{{"id":"2","label":"Branch","children":[]}},...]}}}}"
+
+Text: {text}
+
+Return ONLY JSON."""
+    elif complexity == "detailed":
+        return f"""Create a mind map with root, 5-7 main branches, each with 2-3 sub-branches. Rich detail.
+
+JSON: {{"root":{{"id":"1","label":"Topic","children":[{{"id":"2","label":"Branch","children":[]}},...]}}}}"
+
+Text: {text}
+
+Return ONLY JSON."""
+    elif complexity == "extensive":
+        return f"""Create a comprehensive mind map with root, 8+ main branches, many sub-branches, 3 levels deep. Very detailed.
+
+JSON: {{"root":{{"id":"1","label":"Topic","children":[{{"id":"2","label":"Branch","children":[]}},...]}}}}"
+
+Text: {text}
+
+Return ONLY JSON."""
+    else:  # brief (default)
+        return f"""Create a mind map with root and 3-5 main branches (max 2 levels). Balanced.
+
+JSON: {{"root":{{"id":"1","label":"Topic","children":[{{"id":"2","label":"Branch","children":[]}},...]}}}}"
+
+Text: {text}
+
+Return ONLY JSON."""
 
 
 async def generate_diagram_json(
-    text: str, diagram_type: str, api_key: str
+    text: str, 
+    diagram_type: str, 
+    api_key: str,
+    complexity: str = "brief",
+    temperature: float = 0.7
 ) -> dict:
     if diagram_type == "flowchart":
-        prompt = build_flowchart_prompt(text)
+        prompt = build_flowchart_prompt(text, complexity)
     else:
-        prompt = build_mindmap_prompt(text)
+        prompt = build_mindmap_prompt(text, complexity)
 
     headers = {
         "Authorization": f"Bearer {api_key}",
@@ -116,12 +106,12 @@ async def generate_diagram_json(
         "messages": [
             {
                 "role": "system",
-                "content": "You are a structured data extraction assistant. You always respond with valid JSON only. Never include markdown formatting, code fences, or explanations.",
+                "content": "Output valid JSON only. No markdown or explanations.",
             },
             {"role": "user", "content": prompt},
         ],
         "temperature": 0.3,
-        "max_tokens": 4096,
+        "max_tokens": 2048,
     }
 
     try:
@@ -157,3 +147,261 @@ async def generate_diagram_json(
         return {"error": "Request to Groq API timed out.", "data": None}
     except Exception as e:
         return {"error": f"Unexpected error: {str(e)}", "data": None}
+
+
+async def call_llm_agent(
+    agent: Agent,
+    user_input: str,
+    api_key: str,
+) -> Dict[str, Any]:
+    """
+    Call an LLM agent with the given input.
+    Returns the agent's response as a dictionary with the output.
+    """
+    # Determine API endpoint based on model provider
+    provider = agent.model.split("/")[0].lower()
+    api_url = API_ENDPOINTS.get(provider, GROQ_API_URL)
+    
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+
+    payload = {
+        "model": agent.model,
+        "messages": [
+            {
+                "role": "system",
+                "content": agent.system_prompt,
+            },
+            {
+                "role": "user",
+                "content": user_input,
+            },
+        ],
+        "temperature": 0.7,
+        "max_tokens": 1024,
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(api_url, headers=headers, json=payload)
+
+        if response.status_code == 401:
+            return {
+                "error": f"Invalid API key for {agent.name}",
+                "output": None,
+                "agent_id": agent.id,
+            }
+
+        if response.status_code != 200:
+            return {
+                "error": f"API returned status {response.status_code}: {response.text}",
+                "output": None,
+                "agent_id": agent.id,
+            }
+
+        body = response.json()
+        content = body["choices"][0]["message"]["content"]
+        
+        return {
+            "error": None,
+            "output": content.strip(),
+            "agent_id": agent.id,
+            "agent_name": agent.name,
+        }
+
+    except httpx.TimeoutException:
+        return {
+            "error": f"Request to {agent.name} timed out.",
+            "output": None,
+            "agent_id": agent.id,
+        }
+    except Exception as e:
+        return {
+            "error": f"Error in {agent.name}: {str(e)}",
+            "output": None,
+            "agent_id": agent.id,
+        }
+
+
+async def run_multi_agent_pipeline(
+    initial_input: str,
+    agents: List[Agent],
+    api_key: str,
+) -> Dict[str, Any]:
+    """
+    Run a sequence of agents, passing output from one as input to the next.
+    Returns all agent outputs in order.
+    """
+    enabled_agents = get_enabled_agents(agents)
+    
+    if not enabled_agents:
+        return {
+            "error": "No agents enabled in pipeline",
+            "pipeline_outputs": [],
+        }
+
+    pipeline_outputs = []
+    current_input = initial_input
+
+    for agent in enabled_agents:
+        result = await call_llm_agent(agent, current_input, api_key)
+        
+        pipeline_outputs.append({
+            "agent_id": agent.id,
+            "agent_name": agent.name,
+            "agent_type": agent.type.value,
+            "output": result.get("output"),
+            "error": result.get("error"),
+        })
+
+        if result.get("error"):
+            return {
+                "error": result["error"],
+                "pipeline_outputs": pipeline_outputs,
+            }
+
+        # Next agent's input is the current agent's output
+        current_input = result["output"]
+
+    return {
+        "error": None,
+        "pipeline_outputs": pipeline_outputs,
+        "final_agent_output": current_input,
+    }
+
+
+def build_diagram_prompt_with_context(
+    text: str,
+    diagram_type: str,
+    agent_outputs: Optional[List[str]] = None,
+    complexity: str = "brief",
+) -> str:
+    """
+    Build a diagram prompt that incorporates outputs from the multi-agent pipeline.
+    If agent outputs are provided, they're used as context.
+    """
+    context = ""
+    if agent_outputs:
+        context = "Context from processing pipeline:\n"
+        for i, output in enumerate(agent_outputs, 1):
+            context += f"\n--- Agent Analysis {i} ---\n{output}\n"
+        context += "\nBased on the above analysis and the original input, create the diagram:\n"
+
+    if diagram_type == "flowchart":
+        base_prompt = build_flowchart_prompt(text, complexity)
+    else:
+        base_prompt = build_mindmap_prompt(text, complexity)
+
+    if agent_outputs:
+        # Insert context into the prompt
+        return context + base_prompt
+    
+    return base_prompt
+
+
+async def generate_diagram_with_agents(
+    text: str,
+    diagram_type: str,
+    api_key: str,
+    agents: List[Agent],
+    complexity: str = "brief",
+    temperature: float = 0.7,
+) -> Dict[str, Any]:
+    """
+    Generate a diagram by first running the multi-agent pipeline,
+    then using the final agent output as context for diagram generation.
+    """
+    # Run the multi-agent pipeline
+    pipeline_result = await run_multi_agent_pipeline(text, agents, api_key)
+    
+    if pipeline_result.get("error") and not pipeline_result.get("pipeline_outputs"):
+        return {
+            "error": pipeline_result["error"],
+            "data": None,
+            "agent_outputs": [],
+        }
+
+    # Get agent outputs (excluding any None values)
+    agent_outputs = [
+        output["output"]
+        for output in pipeline_result.get("pipeline_outputs", [])
+        if output.get("output")
+    ]
+
+    # Build diagram prompt with agent context
+    prompt = build_diagram_prompt_with_context(text, diagram_type, agent_outputs, complexity)
+
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+
+    payload = {
+        "model": MODEL,
+        "messages": [
+            {
+                "role": "system",
+                "content": "Output valid JSON only. No explanations.",
+            },
+            {"role": "user", "content": prompt},
+        ],
+        "temperature": 0.3,
+        "max_tokens": 2048,
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(GROQ_API_URL, headers=headers, json=payload)
+
+        if response.status_code == 401:
+            return {
+                "error": "Invalid Groq API key. Please check and try again.",
+                "data": None,
+                "agent_outputs": pipeline_result.get("pipeline_outputs", []),
+            }
+
+        if response.status_code != 200:
+            return {
+                "error": f"Groq API returned status {response.status_code}: {response.text}",
+                "data": None,
+                "agent_outputs": pipeline_result.get("pipeline_outputs", []),
+            }
+
+        body = response.json()
+        content = body["choices"][0]["message"]["content"]
+
+        # Strip markdown fences if LLM wraps them anyway
+        content = content.strip()
+        if content.startswith("```"):
+            content = content.split("\n", 1)[1] if "\n" in content else content[3:]
+        if content.endswith("```"):
+            content = content[:-3]
+        content = content.strip()
+
+        data = json.loads(content)
+        return {
+            "error": None,
+            "data": data,
+            "agent_outputs": pipeline_result.get("pipeline_outputs", []),
+        }
+
+    except json.JSONDecodeError:
+        return {
+            "error": "LLM returned invalid JSON. Please try again.",
+            "data": None,
+            "agent_outputs": pipeline_result.get("pipeline_outputs", []),
+        }
+    except httpx.TimeoutException:
+        return {
+            "error": "Request to Groq API timed out.",
+            "data": None,
+            "agent_outputs": pipeline_result.get("pipeline_outputs", []),
+        }
+    except Exception as e:
+        return {
+            "error": f"Unexpected error: {str(e)}",
+            "data": None,
+            "agent_outputs": pipeline_result.get("pipeline_outputs", []),
+        }
