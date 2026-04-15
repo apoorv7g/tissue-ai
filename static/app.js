@@ -1022,16 +1022,36 @@ function updateNodeVisual(id) {
             "points",
             `${pos.x},${pos.y - hh} ${pos.x + hw},${pos.y} ${pos.x},${pos.y + hh} ${pos.x - hw},${pos.y}`
         );
-    } else {
+    } else if (el.shapeType === "rect") {
         const sz = nodeSizesGlobal[id];
         if (sz) {
             el.shape.setAttribute("x", pos.x - sz.w / 2);
             el.shape.setAttribute("y", pos.y - sz.h / 2);
         }
+        
+        // Update all text elements within ER entity
+        if (el.text && el.boxHeight) {
+            el.text.setAttribute("x", pos.x);
+            // Keep the original offset from center: -( boxHeight/2 - 15)
+            const nameOffsetY = el.boxHeight / 2 - 15;
+            el.text.setAttribute("y", pos.y - nameOffsetY);
+        }
+        
+        // Update attribute texts if present
+        if (el.attrTexts && Array.isArray(el.attrTexts)) {
+            const boxHeight = el.boxHeight || 50;
+            el.attrTexts.forEach((attrText, idx) => {
+                attrText.setAttribute("x", pos.x);
+                attrText.setAttribute("y", pos.y - (boxHeight / 2 - 35) + idx * 18);
+            });
+        }
+        return; // Skip generic text update below for ER entities
     }
 
-    el.text.setAttribute("x", pos.x);
-    el.text.setAttribute("y", pos.y);
+    if (el.text) {
+        el.text.setAttribute("x", pos.x);
+        el.text.setAttribute("y", pos.y);
+    }
 }
 
 // ═══════════════════════════
@@ -1757,63 +1777,74 @@ function renderErDiagram(data) {
         preserveAspectRatio: "xMidYMid meet",
     });
 
-    const nodesGroup = createSvgElement("g");
-    nodesGroup.setAttribute("id", "nodes");
+    const relationsGroup = createSvgElement("g");
+    relationsGroup.setAttribute("id", "relations");
+    svg.appendChild(relationsGroup);
 
-    // Render relationships first (behind entities)
-    relationships.forEach((rel) => {
-        const pos1 = entityPositions[rel.entity1];
-        const pos2 = entityPositions[rel.entity2];
+    const entitiesGroup = createSvgElement("g");
+    entitiesGroup.setAttribute("id", "entities");
+    svg.appendChild(entitiesGroup);
 
-        if (!pos1 || !pos2) return;
+    // Draw relationships function
+    function drawRelationships() {
+        while (relationsGroup.firstChild) relationsGroup.removeChild(relationsGroup.firstChild);
 
-        // Line between entities
-        const line = createSvgElement("line", {
-            x1: pos1.x,
-            y1: pos1.y,
-            x2: pos2.x,
-            y2: pos2.y,
-            stroke: currentTheme.accent || "#f59e0b",
-            "stroke-width": "2",
+        relationships.forEach((rel) => {
+            const pos1 = nodePositions[rel.entity1];
+            const pos2 = nodePositions[rel.entity2];
+
+            if (!pos1 || !pos2) return;
+
+            // Line between entities
+            const line = createSvgElement("line", {
+                x1: pos1.x,
+                y1: pos1.y,
+                x2: pos2.x,
+                y2: pos2.y,
+                stroke: currentTheme.accent || "#f59e0b",
+                "stroke-width": "2",
+            });
+            relationsGroup.appendChild(line);
+
+            // Relationship label
+            const midX = (pos1.x + pos2.x) / 2;
+            const midY = (pos1.y + pos2.y) / 2;
+
+            const bgRect = createSvgElement("rect", {
+                x: midX - 30,
+                y: midY - 10,
+                width: "60",
+                height: "20",
+                fill: currentTheme.surface,
+                stroke: currentTheme.border,
+                "stroke-width": "1",
+                rx: "3",
+            });
+            relationsGroup.appendChild(bgRect);
+
+            const relText = createSvgElement("text", {
+                x: midX,
+                y: midY + 4,
+                "text-anchor": "middle",
+                "font-size": "10",
+                fill: currentTheme.textMuted,
+            });
+            relText.textContent = rel.name;
+            relationsGroup.appendChild(relText);
+
+            // Cardinality label
+            const cardText = createSvgElement("text", {
+                x: pos2.x - 20,
+                y: pos2.y + 20,
+                "font-size": "9",
+                fill: currentTheme.accent,
+            });
+            cardText.textContent = rel.cardinality;
+            relationsGroup.appendChild(cardText);
         });
-        nodesGroup.appendChild(line);
+    }
 
-        // Relationship label
-        const midX = (pos1.x + pos2.x) / 2;
-        const midY = (pos1.y + pos2.y) / 2;
-
-        const bgRect = createSvgElement("rect", {
-            x: midX - 30,
-            y: midY - 10,
-            width: "60",
-            height: "20",
-            fill: currentTheme.surface,
-            stroke: currentTheme.border,
-            "stroke-width": "1",
-            rx: "3",
-        });
-        nodesGroup.appendChild(bgRect);
-
-        const relText = createSvgElement("text", {
-            x: midX,
-            y: midY + 4,
-            "text-anchor": "middle",
-            "font-size": "10",
-            fill: currentTheme.textMuted,
-        });
-        relText.textContent = rel.name;
-        nodesGroup.appendChild(relText);
-
-        // Cardinality label
-        const cardText = createSvgElement("text", {
-            x: pos2.x - 20,
-            y: pos2.y + 20,
-            "font-size": "9",
-            fill: currentTheme.accent,
-        });
-        cardText.textContent = rel.cardinality;
-        nodesGroup.appendChild(cardText);
-    });
+    redrawEdges = drawRelationships;
 
     // Render entities (rectangles with attributes)
     entities.forEach((entity) => {
@@ -1821,18 +1852,29 @@ function renderErDiagram(data) {
         const attrs = entity.attributes || [];
         const boxHeight = 50 + attrs.length * 18;
 
+        // Store position globally
+        nodePositions[entity.id] = { ...pos };
+        nodeSizesGlobal[entity.id] = { w: 140, h: boxHeight };
+
+        // Create group for entity
+        const g = createSvgElement("g", {
+            class: "er-entity",
+            "data-id": entity.id,
+            style: "cursor: grab;",
+        });
+
         // Entity box
         const rect = createSvgElement("rect", {
             x: pos.x - 70,
             y: pos.y - boxHeight / 2,
             width: "140",
-            height: boxHeight,
+            height: boxHeight.toString(),
             fill: currentTheme.surface,
             stroke: currentTheme.accent,
             "stroke-width": "2",
             rx: "4",
         });
-        nodesGroup.appendChild(rect);
+        g.appendChild(rect);
 
         // Entity name
         const nameText = createSvgElement("text", {
@@ -1842,9 +1884,13 @@ function renderErDiagram(data) {
             "font-weight": "bold",
             "font-size": "14",
             fill: currentTheme.text,
+            "pointer-events": "none",
         });
         nameText.textContent = entity.name;
-        nodesGroup.appendChild(nameText);
+        g.appendChild(nameText);
+
+        // Store attribute text elements for updating during drag
+        const attrTexts = [];
 
         // Attributes (smaller text)
         attrs.forEach((attr, idx) => {
@@ -1854,16 +1900,27 @@ function renderErDiagram(data) {
                 "text-anchor": "middle",
                 "font-size": "11",
                 fill: currentTheme.textMuted,
+                "pointer-events": "none",
             });
             attrText.textContent = attr;
-            nodesGroup.appendChild(attrText);
+            attrTexts.push(attrText);
+            g.appendChild(attrText);
         });
 
-        nodePositions[entity.id] = pos;
-        nodeSizesGlobal[entity.id] = { w: 140, h: boxHeight };
+        nodeElements[entity.id] = {
+            shape: rect,
+            text: nameText,
+            attrTexts: attrTexts,
+            group: g,
+            shapeType: "rect",
+            boxHeight: boxHeight,
+        };
+
+        makeNodeDraggable(svg, g, entity.id);
+        entitiesGroup.appendChild(g);
     });
 
-    svg.appendChild(nodesGroup);
+    drawRelationships();
     attachSvgEvents(svg);
     canvasArea.appendChild(svg);
 }
