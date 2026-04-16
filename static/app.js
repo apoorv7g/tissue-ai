@@ -1142,12 +1142,12 @@ function computeFlowchartLayout(data) {
 
     // Compute sizes
     const nodeSizes = {};
-    const paddingX = 36;
+    const paddingX = 25;
     const minW = 140;
-    const nodeH = 50;
+    const nodeH = 60;
 
     nodes.forEach((n) => {
-        const textW = measureText(n.label, 13);
+        const textW = measureText(n.label, 15);
         const w = Math.max(minW, textW + paddingX * 2);
         nodeSizes[n.id] = { w, h: nodeH };
     });
@@ -1159,19 +1159,19 @@ function computeFlowchartLayout(data) {
         connectionDensity[n.id] = (outgoing[n.id]?.length || 0) + (incoming[n.id]?.length || 0);
     });
 
-    // Adaptive spacing parameters
-    let baseGapX = 120;
-    let baseGapY = 160;
-    let radialSpacing = 1.3;
+    // Adaptive spacing parameters - reduced for tighter, more balanced layout
+    let baseGapX = 80;
+    let baseGapY = 110;
+    let radialSpacing = 1.1;
     
     if (totalConnections > nodes.length * 2.5) {
-        baseGapX = 160;
-        baseGapY = 180;
-        radialSpacing = 1.5;
+        baseGapX = 110;
+        baseGapY = 130;
+        radialSpacing = 1.2;
     } else if (totalConnections > nodes.length * 1.5) {
-        baseGapX = 140;
-        baseGapY = 170;
-        radialSpacing = 1.4;
+        baseGapX = 95;
+        baseGapY = 120;
+        radialSpacing = 1.15;
     }
 
     // Improved 2D positioning with radial distribution
@@ -1482,7 +1482,7 @@ function renderFlowchart(data) {
             x: pos.x,
             y: pos.y,
             fill: colors.text,
-            "font-size": "13",
+            "font-size": "16",
             "font-weight": "500",
             "font-family": "Inter, sans-serif",
             "text-anchor": "middle",
@@ -1516,9 +1516,9 @@ function computeMindmapLayout(root) {
 
     function computeSizes(node, depth) {
         node._depth = depth;
-        const fontSize = depth === 0 ? 15 : depth === 1 ? 13 : 12;
+        const fontSize = 16;
         const textW = measureText(node.label, fontSize);
-        const r = Math.max(34, textW / 2 + 20);
+        const r = Math.max(45, textW / 2 + 15);
         sizes[node.id] = { r, fontSize };
         (node.children || []).forEach((c) => computeSizes(c, depth + 1));
     }
@@ -1542,10 +1542,10 @@ function computeMindmapLayout(root) {
         const children = node.children || [];
         if (children.length === 0) return;
 
-        // Adaptive radius based on diagram complexity
+        // Adaptive radius based on diagram complexity - reduced for compact, balanced layout
         // More nodes = more spacing
-        const baseRadiusAdaptive = 280 + (totalNodes > 20 ? 100 : totalNodes > 10 ? 50 : 0);
-        const depthRadiusMultiplier = 120 + (totalNodes > 20 ? 30 : 0);
+        const baseRadiusAdaptive = 180 + (totalNodes > 20 ? 60 : totalNodes > 10 ? 30 : 0);
+        const depthRadiusMultiplier = 75 + (totalNodes > 20 ? 20 : 0);
         
         const baseRadius = baseRadiusAdaptive;
         const radius = baseRadius + depth * depthRadiusMultiplier;
